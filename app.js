@@ -11,8 +11,8 @@ app.use('/cars', carRoutes);
 app.use('/user', userRoutes);
 app.use('/part', partRoutes);
 
-mongoose.connect('mongodb://localhost:27017/PartTec');
-
+mongoose.connect('');
+// mongodb://localhost:27017/PartTec
 app.listen(3000, () => {
   console.log('الخادم يعمل على المنفذ 3000');
 });
