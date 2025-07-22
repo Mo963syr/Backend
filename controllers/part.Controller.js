@@ -1,15 +1,13 @@
 const part = require('../models/part.Model');
 const cloudinary = require('../utils/cloudinary');
 
-
 const mongoose = require('mongoose');
 
 exports.deletePart = async (req, res) => {
   try {
     const { partId } = req.body;
 
-
-    if (!mongoose.Types.ObjectId.isValid(partId) || !partId ) {
+    if (!mongoose.Types.ObjectId.isValid(partId) || !partId) {
       return res.status(400).json({ error: '❌ معرف القطعة غير صالح' });
     }
     const deletedPart = await part.findByIdAndDelete(partId);
@@ -52,7 +50,7 @@ exports.viewPrivateParts = async (req, res) => {
 
 exports.addPart = async (req, res) => {
   try {
-    const { name, manufacturer, model, year, category, Status, user } =
+    const { name, manufacturer, model, year, category, status, user } =
       req.body;
     let imageUrl = req.file ? req.file.path : null; // Changed from const to let
 
@@ -67,7 +65,7 @@ exports.addPart = async (req, res) => {
       model,
       year,
       category,
-      Status,
+      status,
       user,
       imageUrl,
     });

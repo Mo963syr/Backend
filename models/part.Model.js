@@ -87,7 +87,7 @@ const part = new mongoose.Schema(
 
       required: [true, ' يجب اختيار نوع الوقود'],
     },
-    Status: {
+    status: {
       type: String,
       enum: { values: ['مستعمل', 'جديد'] },
 
