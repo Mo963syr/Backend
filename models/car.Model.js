@@ -3,11 +3,11 @@ const mongoose = require('mongoose');
 const carSchema = new mongoose.Schema({
   manufacturer: {
     type: String,
-    required: [true, ' يجب إدخال اسم الصانع']
+    required: [true, ' يجب إدخال اسم الصانع'],
   },
   model: {
     type: String,
-    required: [true, ' يجب إدخال اسم الطراز أو السلسلة']
+    required: [true, ' يجب إدخال اسم الطراز أو السلسلة'],
   },
   year: {
     type: Number,
@@ -17,15 +17,15 @@ const carSchema = new mongoose.Schema({
     type: String,
     enum: {
       values: ['ديزل', 'بترول'],
-      message: ' نوع الوقود يجب أن يكون إما "ديزل" أو "بترول" فقط'
+      message: ' نوع الوقود يجب أن يكون إما "ديزل" أو "بترول" فقط',
     },
-    required: [true, ' يجب اختيار نوع الوقود']
+    required: [true, ' يجب اختيار نوع الوقود'],
   },
-    user: {
+  user: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
-    required: [true, 'يجب ربط السيارة بمعرف المستخدم']
-  }
+    required: [true, 'يجب ربط السيارة بمعرف المستخدم'],
+  },
 });
 
 module.exports = mongoose.model('Car', carSchema);

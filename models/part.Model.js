@@ -1,106 +1,101 @@
 const mongoose = require('mongoose');
 
-const part = new mongoose.Schema(
+const partSchema = new mongoose.Schema(
   {
     name: {
-      // ✅ أصلحت الخطأ الإملائي من naem إلى name
       type: String,
-      required: [true, ' يجب إدخال اسم القطعة'],
+      required: [true, 'يجب إدخال اسم القطعة'],
+      trim: true,
+      maxlength: [100, 'اسم القطعة لا يمكن أن يتجاوز 100 حرف']
     },
     manufacturer: {
       type: String,
-      enum: {
-        values: [
-          'Hyundai',
-          'All',
-          'Acura',
-          'Alfa Romeo',
-          'Aston Martin',
-          'Audi',
-          'Bentley',
-          'BMW',
-          'Bugatti',
-          'Buick',
-          'Cadillac',
-          'Chevrolet',
-          'Chrysler',
-          'Citroën',
-          'Dacia',
-          'Dodge',
-          'Ferrari',
-          'Fiat',
-          'Ford',
-          'Genesis',
-          'GMC',
-          'Honda',
-          'Infiniti',
-          'Jaguar',
-          'Jeep',
-          'Kia',
-          'Koenigsegg',
-          'Lamborghini',
-          'Land Rover',
-          'Lexus',
-          'Lucid',
-          'Maserati',
-          'Mazda',
-          'McLaren',
-          'Mercedes-Benz',
-          'Mini',
-          'Mitsubishi',
-          'Nissan',
-          'Opel',
-          'Peugeot',
-          'Porsche',
-          'Renault',
-          'Rolls-Royce',
-          'Saab',
-          'Seat',
-          'Škoda',
-          'Subaru',
-          'Suzuki',
-          'Tesla',
-          'Toyota',
-          'Volkswagen',
-          'Volvo',
-        ],
-        message: 'اختر نوع شركة مناسب',
-      },
-      required: [true, ' يجب إدخال اسم الصانع'],
+      enum: [
+        'Hyundai', 'All', 'Acura', 'Alfa Romeo', 'Aston Martin', 'Audi', 'Bentley',
+        'BMW', 'Bugatti', 'Buick', 'Cadillac', 'Chevrolet', 'Chrysler', 'Citroën',
+        'Dacia', 'Dodge', 'Ferrari', 'Fiat', 'Ford', 'Genesis', 'GMC', 'Honda',
+        'Infiniti', 'Jaguar', 'Jeep', 'Kia', 'Koenigsegg', 'Lamborghini',
+        'Land Rover', 'Lexus', 'Lucid', 'Maserati', 'Mazda', 'McLaren',
+        'Mercedes-Benz', 'Mini', 'Mitsubishi', 'Nissan', 'Opel', 'Peugeot',
+        'Porsche', 'Renault', 'Rolls-Royce', 'Saab', 'Seat', 'Škoda', 'Subaru',
+        'Suzuki', 'Tesla', 'Toyota', 'Volkswagen', 'Volvo'
+      ],
+      required: [true, 'يجب إدخال اسم الصانع']
     },
     model: {
       type: String,
-      required: [true, ' يجب إدخال اسم الطراز أو السلسلة'],
+      required: [true, 'يجب إدخال اسم الطراز أو السلسلة'],
+      trim: true,
+      maxlength: [50, 'اسم الطراز لا يمكن أن يتجاوز 50 حرف']
     },
     year: {
       type: Number,
-      validate: {
-        validator: function (value) {
-          return value >= 2000 && value <= 2025;
-        },
-        message: 'سنة الصنع يجب أن تكون بين 2000 و 2025',
-      },
-      required: [true, ' يجب إدخال سنة الصنع'],
+      min: [2000, 'سنة الصنع يجب أن تكون 2000 أو أحدث'],
+      max: [new Date().getFullYear(), `سنة الصنع يجب أن تكون ${new Date().getFullYear()} أو أقدم`],
+      required: [true, 'يجب إدخال سنة الصنع']
     },
     category: {
       type: String,
-
-      required: [true, ' يجب اختيار نوع الوقود'],
+      enum: ['محرك', 'هيكل', 'فرامل', 'كهرباء', 'ديكور', 'أخرى'],
+      required: [true, 'يجب اختيار تصنيف القطعة']
     },
     status: {
       type: String,
-      enum: { values: ['مستعمل', 'جديد'] },
-
-      required: [true, ' يجب اختيار حالة القطعة'],
+      enum: ['مستعمل', 'جديد', 'مجدول'],
+      default: 'جديد',
+      required: [true, 'يجب اختيار حالة القطعة']
     },
-    imageUrl: { type: String },
+    price: {
+      type: Number,
+      min: [0, 'السعر يجب أن يكون قيمة موجبة'],
+      required: [true, 'يجب إدخال سعر القطعة']
+    },
+    description: {
+      type: String,
+      trim: true,
+      maxlength: [500, 'الوصف لا يمكن أن يتجاوز 500 حرف']
+    },
+    imageUrl: {
+      type: String,
+      validate: {
+        validator: function(v) {
+          return /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/.test(v);
+        },
+        message: props => `${props.value} ليس رابط صحيح للصورة!`
+      }
+    },
     user: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
-      required: [true, 'يجب ربط القطعة بمعرف المستخدم'],
+      required: [true, 'يجب ربط القطعة بمعرف المستخدم']
     },
+    compatibleCars: [{
+      make: String,
+      model: String,
+      years: {
+        from: Number,
+        to: Number
+      }
+    }]
   },
-  { timestamps: true }
+  { 
+    timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true }
+  }
 );
 
-module.exports = mongoose.model('Part', part);
+// إضافة فهرس لتحسين أداء الاستعلامات
+partSchema.index({ manufacturer: 1 });
+partSchema.index({ model: 1 });
+partSchema.index({ category: 1 });
+partSchema.index({ status: 1 });
+partSchema.index({ price: 1 });
+partSchema.index({ user: 1 });
+
+// Virtual لحساب عمر القطعة
+partSchema.virtual('age').get(function() {
+  return new Date().getFullYear() - this.year;
+});
+
+module.exports = mongoose.model('Part', partSchema);

@@ -1,4 +1,5 @@
 const part = require('../models/part.Model');
+const User = require('../models/user.Model');
 const cloudinary = require('../utils/cloudinary');
 
 const mongoose = require('mongoose');
@@ -26,16 +27,82 @@ exports.deletePart = async (req, res) => {
   }
 };
 
+exports.getCompatibleParts = async (req, res) => {
+  try {
+    const { userId } = req.body;
+
+    // التحقق من صحة معرف المستخدم
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'معرف المستخدم غير صالح',
+      });
+    }
+
+    // جلب سيارات المستخدم
+    const user = await User.findById(userId)
+      .select('cars')
+      .populate('cars', 'manufacturer model year');
+
+    if (!user || !user.cars || user.cars.length === 0) {
+      return res.status(200).json({
+        success: true,
+        parts: [],
+        message: 'لا توجد سيارات مسجلة لهذا المستخدم',
+      });
+    }
+
+    // فلترة القطع حسب الماركة والموديل والسنة فقط
+    const compatibleParts = await part
+      .find({
+        $or: user.cars.map((car) => ({
+          manufacturer: car.manufacturer,
+          model: car.model,
+          year: car.year,
+        })),
+      })
+      .select('name manufacturer model year category status price imageUrl')
+      .sort({ price: 1 });
+
+    res.status(200).json({
+      success: true,
+      userCars: user.cars,
+      compatibleParts: compatibleParts.map((part) => ({
+        id: part._id,
+        name: part.name,
+        manufacturer: part.manufacturer,
+        model: part.model,
+        year: part.year,
+        category: part.category,
+        status: part.status,
+        price: part.price,
+        imageUrl: part.imageUrl || '/default-part-image.jpg',
+      })),
+      meta: {
+        totalParts: compatibleParts.length,
+      },
+    });
+  } catch (error) {
+    console.error('حدث خطأ في جلب القطع المتوافقة:', error);
+    res.status(500).json({
+      success: false,
+      message: 'حدث خطأ في الخادم',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined,
+    });
+  }
+};
 exports.viewPrivateParts = async (req, res) => {
   try {
-    const { userid } = req.body;
+    const { userid, category } = req.body;
 
     let parts;
 
     if (!userid || userid.trim() === '') {
       parts = await part.find();
-    } else {
+    } else if (userid != null) {
       parts = await part.find({ user: userid });
+    } else if (category) {
+      parts = await part.find({ category: category });
     }
 
     res.status(200).json({
