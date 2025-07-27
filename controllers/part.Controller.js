@@ -31,7 +31,6 @@ exports.getCompatibleParts = async (req, res) => {
   try {
     const { userid } = req.params;
 
-    // التحقق من صحة معرف المستخدم
     if (!mongoose.Types.ObjectId.isValid(userid)) {
       return res.status(400).json({
         success: false,
@@ -39,16 +38,16 @@ exports.getCompatibleParts = async (req, res) => {
       });
     }
 
-    // جلب سيارات المستخدم
     const user = await User.findById(userid)
       .select('cars')
       .populate('cars', 'manufacturer model year');
 
     if (!user || !user.cars || user.cars.length === 0) {
+      const part = await part.find();
       return res.status(200).json({
         success: true,
-        parts: [],
-        message: 'لا توجد سيارات مسجلة لهذا المستخدم',
+        parts: part,
+        message: 'تم ارجاع كل السيارات',
       });
     }
 
