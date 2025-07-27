@@ -32,7 +32,7 @@ exports.getCompatibleParts = async (req, res) => {
     const { userid } = req.body;
 
     // التحقق من صحة معرف المستخدم
-    if (!mongoose.Types.ObjectId.isValid(userId)) {
+    if (!mongoose.Types.ObjectId.isValid(userid)) {
       return res.status(400).json({
         success: false,
         message: 'معرف المستخدم غير صالح',
