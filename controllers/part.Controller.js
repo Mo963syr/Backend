@@ -113,6 +113,21 @@ exports.viewPrivateParts = async (req, res) => {
     res.status(500).json({ error: 'فشل في جلب القطع' });
   }
 };
+exports.viewAllParts = async (req, res) => {
+  try {
+   
+    let parts;
+      parts = await part.find();
+
+    res.status(200).json({
+      message: '✅ تم جلب القطع بنجاح',
+      parts: parts,
+    });
+  } catch (error) {
+    console.error('❌ خطأ أثناء جلب القطع:', error);
+    res.status(500).json({ error: 'فشل في جلب القطع' });
+  }
+};
 
 exports.addPart = async (req, res) => {
   try {
