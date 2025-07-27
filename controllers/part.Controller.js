@@ -29,7 +29,7 @@ exports.deletePart = async (req, res) => {
 
 exports.getCompatibleParts = async (req, res) => {
   try {
-    const { userid } = req.body;
+    const { userid } = req.params;
 
     // التحقق من صحة معرف المستخدم
     if (!mongoose.Types.ObjectId.isValid(userid)) {
