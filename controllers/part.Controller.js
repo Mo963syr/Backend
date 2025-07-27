@@ -117,7 +117,7 @@ exports.viewPrivateParts = async (req, res) => {
 
 exports.addPart = async (req, res) => {
   try {
-    const { name, manufacturer, model, year, category, status, user } =
+    const { name, manufacturer, model, year, category, status, user, price } =
       req.body;
     let imageUrl = req.file ? req.file.path : null; // Changed from const to let
 
@@ -135,6 +135,7 @@ exports.addPart = async (req, res) => {
       status,
       user,
       imageUrl,
+      price,
     });
 
     await newPart.save();
