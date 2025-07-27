@@ -29,7 +29,7 @@ exports.deletePart = async (req, res) => {
 
 exports.getCompatibleParts = async (req, res) => {
   try {
-    const { userId } = req.body;
+    const { userid } = req.body;
 
     // التحقق من صحة معرف المستخدم
     if (!mongoose.Types.ObjectId.isValid(userId)) {
@@ -40,7 +40,7 @@ exports.getCompatibleParts = async (req, res) => {
     }
 
     // جلب سيارات المستخدم
-    const user = await User.findById(userId)
+    const user = await User.findById(userid)
       .select('cars')
       .populate('cars', 'manufacturer model year');
 
