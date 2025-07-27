@@ -115,13 +115,12 @@ exports.viewPrivateParts = async (req, res) => {
 };
 exports.viewAllParts = async (req, res) => {
   try {
-   
     let parts;
-      parts = await part.find();
+    parts = await part.find();
 
     res.status(200).json({
       message: '✅ تم جلب القطع بنجاح',
-      parts: parts,
+      compatibleParts: parts,
     });
   } catch (error) {
     console.error('❌ خطأ أثناء جلب القطع:', error);
