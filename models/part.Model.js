@@ -8,6 +8,9 @@ const partSchema = new mongoose.Schema(
       trim: true,
       maxlength: [100, 'اسم القطعة لا يمكن أن يتجاوز 100 حرف'],
     },
+    serialNumber:{
+        type: String
+    },
     manufacturer: {
       type: String,
       enum: [
@@ -83,12 +86,12 @@ const partSchema = new mongoose.Schema(
     },
     category: {
       type: String,
-      enum: ['محرك', 'هيكل', 'فرامل', 'كهرباء', 'ديكور', 'أخرى'],
+      enum: ['محرك', 'هيكل', 'فرامل', 'كهرباء', 'إطارات', 'نظام التعليق',],
       required: [true, 'يجب اختيار تصنيف القطعة'],
     },
     status: {
       type: String,
-      enum: ['مستعمل', 'جديد', 'مجدول'],
+      enum: ['مستعمل', 'جديد'],
       default: 'جديد',
       required: [true, 'يجب اختيار حالة القطعة'],
     },
