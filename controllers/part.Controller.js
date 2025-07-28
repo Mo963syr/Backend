@@ -26,6 +26,7 @@ exports.deletePart = async (req, res) => {
     res.status(500).json({ error: 'فشل في حذف القطعة بسبب خطأ داخلي' });
   }
 };
+
 exports.getCompatibleParts = async (req, res) => {
   try {
     const { userid } = req.params;
@@ -42,29 +43,21 @@ exports.getCompatibleParts = async (req, res) => {
       .populate('cars', 'manufacturer model year');
 
     if (!user || !user.cars || user.cars.length === 0) {
-      // const parts = await part.find();
+      const part = await part.find();
       return res.status(200).json({
         success: true,
-
-        message: 'تم ارجاع كل القطع لعدم وجود سيارات للمستخدم',
+        parts: part,
+        message: 'تم ارجاع كل السيارات',
       });
     }
 
-    // استخراج القيم الفريدة من سيارات المستخدم
-    const manufacturers = [
-      ...new Set(user.cars.map((car) => car.manufacturer)),
-    ];
-    const models = [...new Set(user.cars.map((car) => car.model))];
-    const years = [...new Set(user.cars.map((car) => car.year))];
-
-    // فلترة حسب أحد الحقول (OR)
+    // فلترة القطع حسب الماركة والموديل والسنة فقط
     const compatibleParts = await part
       .find({
-        $or: [
-          { manufacturer: { $in: manufacturers } },
-          { model: { $in: models } },
-          { year: { $in: years } },
-        ],
+        $or: user.cars.map((car) => ({
+          manufacturer: car.manufacturer,
+          model: car.model,
+        })),
       })
       .select('name manufacturer model year category status price imageUrl')
       .sort({ price: 1 });
@@ -96,7 +89,6 @@ exports.getCompatibleParts = async (req, res) => {
     });
   }
 };
-
 exports.viewPrivateParts = async (req, res) => {
   try {
     const { userid, category } = req.body;
