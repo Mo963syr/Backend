@@ -27,7 +27,7 @@ exports.addPart = async (req, res) => {
 
 exports.viewcartitem = async (req, res) => {
   try {
-    const { userId } = req.body;
+    const { userId } = req.params;
 
     // تحقق من صحة معرف المستخدم
     if (!mongoose.Types.ObjectId.isValid(userId)) {
