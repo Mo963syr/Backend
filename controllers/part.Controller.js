@@ -129,8 +129,18 @@ exports.viewAllParts = async (req, res) => {
 
 exports.addPart = async (req, res) => {
   try {
-    const { name, manufacturer, model, year, category, status, user, price } =
-      req.body;
+    const {
+      name,
+      manufacturer,
+      model,
+      year,
+      category,
+      status,
+      user,
+      price,
+      serialNumber,
+      description,
+    } = req.body;
     let imageUrl = req.file ? req.file.path : null; // Changed from const to let
 
     if (req.file) {
@@ -141,6 +151,7 @@ exports.addPart = async (req, res) => {
     const newPart = new part({
       name,
       manufacturer,
+      serialNumber,
       model,
       year,
       category,
@@ -148,6 +159,7 @@ exports.addPart = async (req, res) => {
       user,
       imageUrl,
       price,
+      description,
     });
 
     await newPart.save();
