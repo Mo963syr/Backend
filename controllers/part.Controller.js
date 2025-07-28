@@ -42,16 +42,18 @@ exports.getCompatibleParts = async (req, res) => {
       .populate('cars', 'manufacturer model year');
 
     if (!user || !user.cars || user.cars.length === 0) {
-      const parts = await part.find();
+      // const parts = await part.find();
       return res.status(200).json({
         success: true,
-        parts: parts,
+
         message: 'تم ارجاع كل القطع لعدم وجود سيارات للمستخدم',
       });
     }
 
     // استخراج القيم الفريدة من سيارات المستخدم
-    const manufacturers = [...new Set(user.cars.map((car) => car.manufacturer))];
+    const manufacturers = [
+      ...new Set(user.cars.map((car) => car.manufacturer)),
+    ];
     const models = [...new Set(user.cars.map((car) => car.model))];
     const years = [...new Set(user.cars.map((car) => car.year))];
 
