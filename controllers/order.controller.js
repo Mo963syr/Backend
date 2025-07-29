@@ -6,7 +6,7 @@ exports.createOrder = async (req, res) => {
     const { userId, paymentMethod, address, mapLink, deliveryLocation } = req.body;
 
     const cartItems = await Cart.find({ userId }).populate('partId');
-
+console.log(cartItems);
     if (!cartItems.length) {
       return res.status(400).json({ message: 'السلة فارغة' });
     }

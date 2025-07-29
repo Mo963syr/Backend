@@ -16,6 +16,29 @@ const cartSchema = new mongoose.Schema({
     default: 1,
     min: 1,
   },
+  status: {
+    type: String,
+    enum: ['قيد المعالجة', 'مؤكد', 'ملغي'],
+    default: 'قيد المعالجة',
+  },
+  paymentMethod: {
+    type: String,
+    enum: ['عند الاستلام', 'بطاقة إلكترونية'],
+    default: 'عند الاستلام',
+  },
+  location: {
+    type: {
+      type: String,
+      enum: ['Point'],
+      default: 'Point'
+    },
+    coordinates: {
+      type: [Number], // [lng, lat]
+      default: undefined
+    }
+  }
 }, { timestamps: true });
+
+cartSchema.index({ location: '2dsphere' });
 
 module.exports = mongoose.model('Cart', cartSchema);
