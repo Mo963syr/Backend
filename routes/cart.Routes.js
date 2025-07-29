@@ -6,6 +6,6 @@ const { addPart, viewcartitem , getCartItemsForSeller ,updateCartStatus} = requi
 router.post('/addToCart', addPart);
 router.get('/viewcartitem/:userId', viewcartitem);
 router.get('/getCartItemsForSeller/:sellerId', getCartItemsForSeller);
-router.get('/status/:cartId', updateCartStatus);
+router.put('/status/:cartId', updateCartStatus);
 
 module.exports = router;
