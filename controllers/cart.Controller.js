@@ -1,18 +1,70 @@
 const cart = require('../models/cart.model');
 const User = require('../models/user.Model');
-
+const Part = require('../models/part.Model');
 const cloudinary = require('../utils/cloudinary');
 
 const mongoose = require('mongoose');
 
+exports.getCartItemsForSeller = async (req, res) => {
+  try {
+    const sellerId = req.params.sellerId;
+
+    const cartItems = await cart
+      .find({ status: 'مؤكد' })
+      .populate({
+        path: 'partId',
+        match: { user: sellerId },
+        select: 'name price user imageUrl',
+      })
+      .populate('userId', 'name email')
+      .sort({ createdAt: -1 });
+
+    const filtered = cartItems
+      .filter((item) => item.partId)
+      .map((item) => ({
+        _id: item._id,
+        user: item.userId,
+        part: item.partId,
+        quantity: item.quantity,
+        total: item.quantity * (item.partId?.price || 0),
+        createdAt: item.createdAt,
+      }));
+
+    const totalAmount = filtered.reduce((sum, item) => sum + item.total, 0);
+
+    res.status(200).json({
+      success: true,
+      items: filtered,
+      totalAmount,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'فشل في جلب عناصر السلة الخاصة بالبائع',
+      error: error.message,
+    });
+  }
+};
+
 exports.addPart = async (req, res) => {
   try {
-    const { partId, userId } = req.body;
-    const addCart = new cart({
+    const { partId, userId, coordinates, paymentMethod, status } = req.body;
+
+    const cartData = {
       partId,
       userId,
-    });
-    find = await cart.findById;
+      paymentMethod,
+      status,
+    };
+
+    if (coordinates && Array.isArray(coordinates) && coordinates.length === 2) {
+      cartData.location = {
+        type: 'Point',
+        coordinates: coordinates,
+      };
+    }
+
+    const addCart = new cart(cartData);
     await addCart.save();
 
     res.status(201).json({
@@ -21,7 +73,9 @@ exports.addPart = async (req, res) => {
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: '❌ فشل في إضافة المنتج' });
+    res
+      .status(500)
+      .json({ error: '❌ فشل في إضافة المنتج', details: error.message });
   }
 };
 
