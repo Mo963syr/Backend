@@ -4,6 +4,7 @@ const carRoutes = require('./routes/car.Routes');
 const userRoutes = require('./routes/user.Routes');
 const partRoutes = require('./routes/part.Routes');
 const cartRoutes = require('./routes/cart.Routes');
+const orderRoutes = require('./routes/order.routes');
 
 const app = express();
 app.use(express.json());
@@ -12,7 +13,7 @@ app.use('/cars', carRoutes);
 app.use('/user', userRoutes);
 app.use('/part', partRoutes);
 app.use('/cart', cartRoutes);
-
+app.use('/order', orderRoutes);
 const uri =
   'mongodb+srv://moafaqaqeed01:JqphSStXpXgsv8t@cluster0.vhz1h.mongodb.net/PartTec?retryWrites=true&w=majority';
 
