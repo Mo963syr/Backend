@@ -91,7 +91,6 @@ exports.viewcartitem = async (req, res) => {
       });
     }
 
-    // جلب عناصر السلة الخاصة بالمستخدم مع التفاصيل المرتبطة بالقطعة
     const cartItems = await cart
       .find({ userId })
       .populate('partId')
@@ -108,5 +107,35 @@ exports.viewcartitem = async (req, res) => {
       success: false,
       message: '❌ فشل في تحميل محتوى السلة',
     });
+  }
+};
+exports.updateCartStatus = async (req, res) => {
+  try {
+    const { cartId } = req.params;
+    const { status } = req.body;
+
+    const allowedStatuses = ['قيد المعالجة', 'مؤكد', 'ملغي', 'على الطريق'];
+    if (!allowedStatuses.includes(status)) {
+      return res.status(400).json({ success: false, message: '❌ حالة غير صالحة' });
+    }
+
+    const updated = await cart.findByIdAndUpdate(
+      cartId,
+      { status },
+      { new: true }
+    ).populate('partId userId');
+
+    if (!updated) {
+      return res.status(404).json({ success: false, message: '❌ لم يتم العثور على العنصر' });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: '✅ تم تحديث حالة القطعة',
+      updatedItem: updated,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: '❌ فشل في تحديث الحالة', error: error.message });
   }
 };
