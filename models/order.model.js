@@ -1,3 +1,4 @@
+// models/order.js
 const mongoose = require('mongoose');
 
 const orderSchema = new mongoose.Schema(
@@ -7,37 +8,14 @@ const orderSchema = new mongoose.Schema(
       ref: 'User',
       required: true,
     },
-    items: [
+    cartIds: [
       {
-        partId: {
-          type: mongoose.Schema.Types.ObjectId,
-          ref: 'Part',
-          required: true,
-        },
-        quantity: {
-          type: Number,
-          default: 1,
-        },
-        sellerId: {
-          type: mongoose.Schema.Types.ObjectId,
-          ref: 'User',
-          required: true,
-        },
-        status: {
-          type: String,
-          enum: ['قيد التنفيذ', 'مؤكد', 'ملغي', 'تم التوصيل'],
-          default: 'قيد التنفيذ',
-        }
-      }
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Cart',
+        required: true,
+      },
     ],
-    paymentMethod: {
-      type: String,
-      enum: ['عند الاستلام', 'بطاقة إلكترونية'],
-      required: true,
-    },
-    address: String,
-    mapLink: String,
-    deliveryLocation: {
+    location: {
       type: {
         type: String,
         enum: ['Point'],
@@ -45,12 +23,24 @@ const orderSchema = new mongoose.Schema(
       },
       coordinates: {
         type: [Number],
-      }
-    }
+        validate: {
+          validator: function (val) {
+            return Array.isArray(val) && val.length === 2;
+          },
+          message: 'يجب تحديد إحداثيات صحيحة [lng, lat]',
+        },
+        required: false,
+      },
+    },
+    status: {
+      type: String,
+      enum: ['قيد المعالجة', 'مؤكد', 'ملغي', 'على الطريق'],
+      default: 'مؤكد',
+    },
   },
   { timestamps: true }
 );
 
-orderSchema.index({ deliveryLocation: '2dsphere' });
+orderSchema.index({ location: '2dsphere' });
 
 module.exports = mongoose.model('Order', orderSchema);

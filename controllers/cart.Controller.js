@@ -1,6 +1,7 @@
 const cart = require('../models/cart.model');
 const User = require('../models/user.Model');
 const Part = require('../models/part.Model');
+const Order = require('../models/order.model');
 const cloudinary = require('../utils/cloudinary');
 
 const mongoose = require('mongoose');
@@ -83,7 +84,7 @@ exports.viewcartitem = async (req, res) => {
   try {
     const { userId } = req.params;
 
-    // تحقق من صحة معرف المستخدم
+
     if (!mongoose.Types.ObjectId.isValid(userId)) {
       return res.status(400).json({
         success: false,
@@ -92,7 +93,7 @@ exports.viewcartitem = async (req, res) => {
     }
 
     const cartItems = await cart
-      .find({ userId })
+      .find({ userId ,status:'قيد المعالجة' })
       .populate('partId')
       .sort({ createdAt: -1 });
 
@@ -124,7 +125,11 @@ exports.updateCartStatus = async (req, res) => {
       { status },
       { new: true }
     ).populate('partId userId');
-
+  //  const updateOrder=await Order.findByIdAndUpdate(
+  //     cartId,
+  //     { status },
+  //     { new: true }
+  //   ).populate('partId userId');
     if (!updated) {
       return res.status(404).json({ success: false, message: '❌ لم يتم العثور على العنصر' });
     }
