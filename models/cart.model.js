@@ -18,7 +18,7 @@ const cartSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['قيد المعالجة', 'مؤكد', 'ملغي','على الطريق'],
+    enum: ['قيد المعالجة', 'مؤكد', 'ملغي','على الطريق','قيد التجهيز'], 
     default: 'قيد المعالجة',
   },
   paymentMethod: {

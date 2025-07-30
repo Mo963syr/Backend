@@ -34,7 +34,7 @@ const orderSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ['قيد المعالجة', 'مؤكد', 'ملغي', 'على الطريق'],
+      enum: ['قيد التجهيز', 'مؤكد', 'ملغي', 'على الطريق'],
       default: 'مؤكد',
     },
   },

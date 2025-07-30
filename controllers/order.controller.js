@@ -32,7 +32,7 @@ exports.addOrder = async (req, res) => {
       });
     }
 
-    const userCartItems = await Cart.find({ userId });
+    const userCartItems = await Cart.find({ userId ,status:'قيد المعالجة'});
 
     if (userCartItems.length === 0) {
       return res.status(404).json({
@@ -85,8 +85,7 @@ exports.vieworderitem = async (req, res) => {
       });
     }
 
-    const orders = await Order
-      .find({ userId })
+    const orders = await Order.find({ userId })
       .populate({
         path: 'cartIds',
         populate: {
@@ -113,13 +112,13 @@ exports.getOrdersForSeller = async (req, res) => {
   try {
     const sellerId = req.params.sellerId;
 
-    const orders = await Order.find() 
+    const orders = await Order.find({ status: 'مؤكد' })
       .populate({
         path: 'cartIds',
         populate: {
           path: 'partId',
           match: { user: sellerId },
-          select: 'name price user imageUrl',
+          select: 'name price user imageUrl location',
         },
       })
       .populate('userId', 'name email')
@@ -127,8 +126,8 @@ exports.getOrdersForSeller = async (req, res) => {
 
     const sellerItems = [];
 
-    orders.forEach(order => {
-      order.cartIds.forEach(item => {
+    orders.forEach((order) => {
+      order.cartIds.forEach((item) => {
         if (item.partId) {
           sellerItems.push({
             orderId: order._id,
@@ -165,18 +164,26 @@ exports.updateOrderStatus = async (req, res) => {
     const { orderId } = req.params;
     const { status } = req.body;
 
-    const allowedStatuses = ['قيد المعالجة', 'مؤكد', 'ملغي', 'على الطريق', 'تم التوصيل'];
+    const allowedStatuses = [
+      'قيد التجهيز',
+      'مؤكد',
+      'ملغي',
+      'على الطريق',
+      'تم التوصيل',
+    ];
     if (!allowedStatuses.includes(status)) {
-      return res.status(400).json({ success: false, message: '❌ حالة غير صالحة' });
+      return res
+        .status(400)
+        .json({ success: false, message: '❌ حالة غير صالحة' });
     }
 
- 
     const order = await Order.findById(orderId);
     if (!order) {
-      return res.status(404).json({ success: false, message: '❌ الطلب غير موجود' });
+      return res
+        .status(404)
+        .json({ success: false, message: '❌ الطلب غير موجود' });
     }
 
- 
     order.status = status;
     await order.save();
 
@@ -190,7 +197,6 @@ exports.updateOrderStatus = async (req, res) => {
       message: '✅ تم تحديث حالة الطلب وجميع عناصر السلة المرتبطة به',
       order,
     });
-
   } catch (error) {
     console.error('❌ خطأ في تحديث الحالة:', error);
     res.status(500).json({
