@@ -32,7 +32,7 @@ exports.addOrder = async (req, res) => {
       });
     }
 
-    const userCartItems = await Cart.find({ userId ,status:'قيد المعالجة'});
+    const userCartItems = await Cart.find({ userId, status: 'قيد المعالجة' });
 
     if (userCartItems.length === 0) {
       return res.status(404).json({
@@ -112,7 +112,7 @@ exports.getOrdersForSeller = async (req, res) => {
   try {
     const sellerId = req.params.sellerId;
 
-    const orders = await Order.find({ status: 'مؤكد' })
+    const orders = await Order.find()
       .populate({
         path: 'cartIds',
         populate: {
