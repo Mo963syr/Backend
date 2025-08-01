@@ -13,11 +13,11 @@ exports.addOrder = async (req, res) => {
       });
     }
 
-    const existingOrder = await Order.findOne({ userId });
-    if (existingOrder) {
+    const existingOrder = await Order.find({ userId , status:{ $ne: 'تم التوصيل' } });
+    if (existingOrder.length>=3) {
       return res.status(400).json({
         success: false,
-        message: '⚠️ تم بالفعل إنشاء طلب بهذه السلة من قبل',
+        message: '⚠️ لا يمكن إنشاء أكثر من 3 طلبات غير مكتملة',
       });
     }
 
