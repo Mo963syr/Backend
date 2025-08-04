@@ -21,3 +21,17 @@ exports.addUser = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+exports.viewsellerprands = async (req, res) => {
+  try {
+    const { userId } = req.params;
+const prands=await User.find({userId}).select('prands');
+ 
+
+    res.status(201).json({
+      message: 'sucsses',
+      prands,
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
