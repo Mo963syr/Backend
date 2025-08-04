@@ -126,6 +126,21 @@ exports.viewAllParts = async (req, res) => {
     res.status(500).json({ error: 'فشل في جلب القطع' });
   }
 };
+exports.viewsellerParts = async (req, res) => {
+  try {
+    const {userId}=req.params;
+       let parts;
+    parts = await part.find({user:userId});
+
+    res.status(200).json({
+     
+       parts,
+    });
+  } catch (error) {
+    console.error('❌ خطأ أثناء جلب القطع:', error);
+    res.status(500).json({ error: 'فشل في جلب القطع' });
+  }
+};
 
 exports.addPart = async (req, res) => {
   try {
