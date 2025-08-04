@@ -17,11 +17,11 @@ const userSchema = new mongoose.Schema({
     required: [true, 'يجب إدخال كلمة المرور'],
     minlength: [6, 'يجب أن تكون كلمة المرور على الأقل 6 أحرف']
   },
- phoneNumber: {
-  type: String,
-  required: [true, 'يجب إدخال رقم الموبايل'],
-  match: [/^(?:\+963|00963|0)?9\d{8}$/, 'رقم الموبايل السوري غير صالح']
-},
+  phoneNumber: {
+    type: String,
+    required: [true, 'يجب إدخال رقم الموبايل'],
+    match: [/^(?:\+963|00963|0)?9\d{8}$/, 'رقم الموبايل السوري غير صالح']
+  },
   createdAt: {
     type: Date,
     default: Date.now
@@ -29,7 +29,11 @@ const userSchema = new mongoose.Schema({
   cars: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Car'
-  }]
+  }],
+  prands: {
+    type: [String], 
+    default: []
+  }
 });
 
 module.exports = mongoose.model('User', userSchema);

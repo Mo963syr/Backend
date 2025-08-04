@@ -1,13 +1,14 @@
 const User = require('../models/user.Model');
 exports.addUser = async (req, res) => {
   try {
-    const { name, email, password, phoneNumber } = req.body;
+    const { name, email, password, phoneNumber, prands } = req.body;
 
     const user = await User.create({
       name,
       email,
       password,
       phoneNumber,
+      prands,
     });
 
     await user.save();
