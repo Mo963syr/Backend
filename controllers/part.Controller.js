@@ -128,13 +128,12 @@ exports.viewAllParts = async (req, res) => {
 };
 exports.viewsellerParts = async (req, res) => {
   try {
-    const {userId}=req.params;
-       let parts;
-    parts = await part.find({user:userId});
+    const { userId } = req.params;
+
+    const parts = await part.find({ user: userId }).sort({ createdAt: -1 });
 
     res.status(200).json({
-     
-       parts,
+      parts,
     });
   } catch (error) {
     console.error('❌ خطأ أثناء جلب القطع:', error);
@@ -156,6 +155,14 @@ exports.addPart = async (req, res) => {
       serialNumber,
       description,
     } = req.body;
+    //     const users=await User.findById(user);
+
+    //     if(!users){
+    //  return res.status(404).json({
+    //     success: false,
+    //     message: '🚫 المستخدم غير موجود في قاعدة البيانات',
+    //   });
+    //     }
     let imageUrl = req.file ? req.file.path : null; // Changed from const to let
 
     if (req.file) {
