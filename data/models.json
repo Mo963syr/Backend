@@ -1,0 +1,7 @@
+{
+  "kia": ["Cerato", "Sportage", "Rio", "Sorento", "Stinger", "Telluride"],
+  "hyundai": ["Elantra", "Sonata", "Tucson", "Santa Fe", "Accent", "Venue"],
+  "toyota": ["Corolla", "Camry", "RAV4", "Highlander", "Prius", "Yaris"],
+  "ford": ["Focus", "Mustang", "Escape", "Explorer", "F-150"],
+  "bmw": ["3 Series", "5 Series", "X1", "X3", "X5"]
+}
