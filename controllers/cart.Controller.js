@@ -56,12 +56,6 @@ exports.addPart = async (req, res) => {
       userId,
     };
 
-    if (coordinates && Array.isArray(coordinates) && coordinates.length === 2) {
-      cartData.location = {
-        type: 'Point',
-        coordinates: coordinates,
-      };
-    }
 
     const addCart = new cart(cartData);
     await addCart.save();
