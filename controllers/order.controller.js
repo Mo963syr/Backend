@@ -112,42 +112,51 @@ exports.getOrdersForSeller = async (req, res) => {
   try {
     const sellerId = req.params.sellerId;
 
+    // جلب جميع الطلبات مع القطع الخاصة بالمورد الحالي
     const orders = await Order.find()
       .populate({
         path: 'cartIds',
         populate: {
           path: 'partId',
-          match: { user: sellerId },
+          match: { user: sellerId }, // فلترة القطع حسب المورد
           select: 'name price user imageUrl location',
         },
       })
-      .populate('userId', 'name email')
+      .populate('userId', 'name email') // جلب بيانات الزبون
       .sort({ createdAt: -1 });
 
-    const sellerItems = [];
-
-    orders.forEach((order) => {
-      order.cartIds.forEach((item) => {
-        if (item.partId) {
-          sellerItems.push({
+    // تصفية الطلبات بحيث تحتوي فقط على القطع التابعة للمورد
+    const filteredOrders = orders
+      .map(order => {
+        const sellerParts = order.cartIds.filter(item => item.partId);
+        if (sellerParts.length > 0) {
+          return {
             orderId: order._id,
-            user: order.userId,
-            part: item.partId,
-            quantity: item.quantity,
-            total: item.quantity * (item.partId.price || 0),
-            createdAt: order.createdAt,
+            customer: order.userId, // بيانات الزبون
             status: order.status,
-          });
+            createdAt: order.createdAt,
+            items: sellerParts.map(item => ({
+              partId: item.partId._id,
+              name: item.partId.name,
+              price: item.partId.price,
+              quantity: item.quantity,
+              total: item.quantity * (item.partId.price || 0),
+              imageUrl: item.partId.imageUrl,
+              location: item.partId.location
+            })),
+            totalAmount: sellerParts.reduce(
+              (sum, item) => sum + item.quantity * (item.partId.price || 0),
+              0
+            ),
+          };
         }
-      });
-    });
-
-    const totalAmount = sellerItems.reduce((sum, item) => sum + item.total, 0);
+        return null;
+      })
+      .filter(order => order !== null);
 
     res.status(200).json({
       success: true,
-      items: sellerItems,
-      totalAmount,
+      orders: filteredOrders,
     });
   } catch (error) {
     console.error('❌ Error fetching seller orders:', error);

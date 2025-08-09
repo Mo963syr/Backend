@@ -21,28 +21,28 @@ const cartSchema = new mongoose.Schema({
     enum: ['قيد المعالجة', 'مؤكد', 'ملغي','على الطريق','قيد التجهيز'], 
     default: 'قيد المعالجة',
   },
-  paymentMethod: {
-    type: String,
-    enum: ['عند الاستلام', 'بطاقة إلكترونية'],
-    default: 'عند الاستلام',
-  },
-  location: {
-    type: {
-      type: String,
-      enum: ['Point'],
-      default: 'Point'
-    },
-    coordinates: {
-      type: [Number],
-      validate: {
-        validator: function(val) {
-          return Array.isArray(val) && val.length === 2;
-        },
-        message: 'يجب تحديد إحداثيات صحيحة [lng, lat]'
-      },
-      required: false
-    }
-  }
+  // paymentMethod: {
+  //   type: String,
+  //   enum: ['عند الاستلام', 'بطاقة إلكترونية'],
+  //   default: 'عند الاستلام',
+  // },
+  // location: {
+  //   type: {
+  //     type: String,
+  //     enum: ['Point'],
+  //     default: 'Point'
+  //   },
+  //   coordinates: {
+  //     type: [Number],
+  //     validate: {
+  //       validator: function(val) {
+  //         return Array.isArray(val) && val.length === 2;
+  //       },
+  //       message: 'يجب تحديد إحداثيات صحيحة [lng, lat]'
+  //     },
+  //     required: false
+  //   }
+  // }
 }, { timestamps: true });
 
 cartSchema.index({ location: '2dsphere' });

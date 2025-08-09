@@ -49,13 +49,11 @@ exports.getCartItemsForSeller = async (req, res) => {
 
 exports.addPart = async (req, res) => {
   try {
-    const { partId, userId, coordinates, paymentMethod, status } = req.body;
+    const { partId, userId,} = req.body;
 
     const cartData = {
       partId,
       userId,
-      paymentMethod,
-      status,
     };
 
     if (coordinates && Array.isArray(coordinates) && coordinates.length === 2) {
