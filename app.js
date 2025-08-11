@@ -7,6 +7,7 @@ const cartRoutes = require('./routes/cart.Routes');
 const orderRoutes = require('./routes/order.routes');
 const modelsRoute = require('./routes/models');
 const favoritesRoutes = require('./routes/favorites.Routes');
+
 const app = express();
 app.use(express.json());
 

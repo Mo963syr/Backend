@@ -88,8 +88,6 @@ const spicificorderschema = new mongoose.Schema(
     status: {
       type: String,
       enum: ['مستعمل', 'جديد', 'كلاهما'],
-      default: 'جديد',
-      required: [true, 'يجب اختيار حالة القطعة'],
     },
 
     notes: {
