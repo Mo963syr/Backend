@@ -30,6 +30,6 @@ mongoose
     console.error('❌ فشل الاتصال:', err);
   });
 
-app.listen(10000, () => {
+app.listen(3000, () => {
   console.log('الخادم يعمل على المنفذ 3000');
 });
