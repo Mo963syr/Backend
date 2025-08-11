@@ -1,5 +1,6 @@
 const part = require('../models/part.Model');
 const User = require('../models/user.Model');
+const spicificorder = require('../models/spicificPartOrder.model');
 const cloudinary = require('../utils/cloudinary');
 
 const mongoose = require('mongoose');
@@ -182,6 +183,57 @@ exports.addPart = async (req, res) => {
       imageUrl,
       price,
       description,
+    });
+
+    await newPart.save();
+
+    res.status(201).json({
+      message: '✅ تم إضافة المنتج',
+      part: newPart,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: '❌ فشل في إضافة المنتج' });
+  }
+};
+
+exports.addspicificorder = async (req, res) => {
+  try {
+    const {
+      name,
+      manufacturer,
+      model,
+      year,
+      status,
+      user,
+      serialNumber,
+      notes,
+    } = req.body;
+    //     const users=await User.findById(user);
+
+    //     if(!users){
+    //  return res.status(404).json({
+    //     success: false,
+    //     message: '🚫 المستخدم غير موجود في قاعدة البيانات',
+    //   });
+    //     }
+    let imageUrl = req.file ? req.file.path : null; // Changed from const to let
+
+    if (req.file) {
+      const result = await cloudinary.uploader.upload(req.file.path);
+      imageUrl = result.secure_url; // Now this works because imageUrl is let
+    }
+
+    const newPart = new spicificorder({
+      name,
+      manufacturer,
+      serialNumber,
+      model,
+      year,
+      status,
+      user,
+      imageUrl,
+      notes,
     });
 
     await newPart.save();
