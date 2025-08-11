@@ -2,6 +2,8 @@
 const mongoose = require('mongoose');
 const Cart = require('../models/cart.model');
 const Order = require('../models/order.model');
+const spicificOrder = require('../models/spicificPartOrder.model');
+
 exports.addOrder = async (req, res) => {
   try {
     const { userId, coordinates } = req.body;
@@ -93,6 +95,34 @@ exports.vieworderitem = async (req, res) => {
         },
       })
       .sort({ createdAt: -1 });
+
+    res.status(200).json({
+      success: true,
+      message: '✅ تم تحميل الطلبات بنجاح',
+      orders,
+    });
+  } catch (error) {
+    console.error('حدث خطأ أثناء جلب الطلبات:', error);
+    res.status(500).json({
+      success: false,
+      message: '❌ فشل في تحميل الطلبات',
+      error: error.message,
+    });
+  }
+};
+
+exports.viewspicificorderitem = async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(400).json({
+        success: false,
+        message: '⚠️ معرف المستخدم غير صالح',
+      });
+    }
+
+    const orders = await spicificOrder.find({ userId }).sort({ createdAt: -1 });
 
     res.status(200).json({
       success: true,
