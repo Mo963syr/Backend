@@ -86,8 +86,9 @@ const spicificorderschema = new mongoose.Schema(
       required: [true, 'يجب إدخال سنة الصنع'],
     },
     status: {
-      type: String,
-      enum: ['مستعمل', 'جديد', 'كلاهما'],
+          type: String,
+      enum: ['بانتظار تأكيدك', 'قيد البحث', 'ملغي', 'على الطريق','تم التوصيل' ,'مؤكد'],
+      default: 'قيد البحث',
     },
 
     notes: {
