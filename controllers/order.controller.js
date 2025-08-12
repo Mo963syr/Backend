@@ -2,7 +2,8 @@
 const mongoose = require('mongoose');
 const Cart = require('../models/cart.model');
 const Order = require('../models/order.model');
-const spicificOrder = require('../models/spicificPartOrder.model');
+const User = require('../models/user.Model');
+const SpOrder = require('../models/spicificPartOrder.model');
 
 exports.addOrder = async (req, res) => {
   try {
@@ -138,31 +139,31 @@ exports.viewspicificorderitem = async (req, res) => {
     });
   }
 };
+
+
+
 exports.getOrdersForSeller = async (req, res) => {
   try {
     const sellerId = req.params.sellerId;
-
-    // جلب جميع الطلبات مع القطع الخاصة بالمورد الحالي
     const orders = await Order.find()
       .populate({
         path: 'cartIds',
         populate: {
           path: 'partId',
-          match: { user: sellerId }, // فلترة القطع حسب المورد
+          match: { user: sellerId }, 
           select: 'name price user imageUrl location',
         },
       })
-      .populate('userId', 'name email') // جلب بيانات الزبون
+      .populate('userId', 'name email') 
       .sort({ createdAt: -1 });
 
-    // تصفية الطلبات بحيث تحتوي فقط على القطع التابعة للمورد
     const filteredOrders = orders
       .map(order => {
         const sellerParts = order.cartIds.filter(item => item.partId);
         if (sellerParts.length > 0) {
           return {
             orderId: order._id,
-            customer: order.userId, // بيانات الزبون
+            customer: order.userId, 
             status: order.status,
             createdAt: order.createdAt,
             items: sellerParts.map(item => ({

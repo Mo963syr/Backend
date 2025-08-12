@@ -1,6 +1,5 @@
 const Favorite = require('../models/Favorite.model');
 
-// ✅ إضافة للمفضلة
 exports.addFavorite = async (req, res) => {
   try {
     const { userId, partId } = req.body;
@@ -23,7 +22,6 @@ exports.addFavorite = async (req, res) => {
   }
 };
 
-// ❌ إزالة من المفضلة
 exports.removeFavorite = async (req, res) => {
   try {
     const { userId, partId } = req.body;
@@ -40,13 +38,12 @@ exports.removeFavorite = async (req, res) => {
   }
 };
 
-// 📜 عرض المفضلة
 exports.viewFavorites = async (req, res) => {
   try {
     const { userId } = req.params;
 
     const favorites = await Favorite.find({ userId })
-      .populate('partId') // جلب بيانات القطعة كاملة
+      .populate('partId') 
       .exec();
 
     res.status(200).json({

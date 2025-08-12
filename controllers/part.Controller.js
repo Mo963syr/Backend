@@ -52,7 +52,7 @@ exports.getCompatibleParts = async (req, res) => {
       });
     }
 
-    // فلترة القطع حسب الماركة والموديل والسنة فقط
+
     const compatibleParts = await part
       .find({
         $or: user.cars.map((car) => ({
