@@ -154,7 +154,7 @@ exports.viewspicificorderitem = async (req, res) => {
       });
     }
 
-    const orders = await spicificOrder.find({ user: userId });
+    const orders = await SpicificOrder.find({ user: userId });
 
     res.status(200).json({
       success: true,
