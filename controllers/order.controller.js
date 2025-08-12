@@ -3,7 +3,35 @@ const mongoose = require('mongoose');
 const Cart = require('../models/cart.model');
 const Order = require('../models/order.model');
 const User = require('../models/user.Model');
-const SpOrder = require('../models/spicificPartOrder.model');
+const SpicificOrder = require('../models/spicificPartOrder.model');
+
+exports.getUserBrandOrders = async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+   
+    const user = await User.findById(userId).select('prands name phoneNumber');
+    if (!user) return res.status(404).json({ message: 'المستخدم غير موجود' });
+
+    const brands = Array.isArray(user.prands) ? user.prands : [];
+    if (brands.length === 0) return res.json([]);
+
+    const orders = await SpicificOrder.find({
+      manufacturer: { $in: brands },
+    }).lean();
+
+    const ordersWithUser = orders.map((order) => ({
+      ...order,
+      userId: user._id,
+      userName: user.name,
+      phoneNumber: user.phoneNumber,
+    }));
+
+    res.json(ordersWithUser);
+  } catch (err) {
+    res.status(500).json({ message: 'خطأ في الخادم', error: err.message });
+  }
+};
 
 exports.addOrder = async (req, res) => {
   try {
@@ -16,8 +44,11 @@ exports.addOrder = async (req, res) => {
       });
     }
 
-    const existingOrder = await Order.find({ userId , status:{ $ne: 'تم التوصيل' } });
-    if (existingOrder.length>=3) {
+    const existingOrder = await Order.find({
+      userId,
+      status: { $ne: 'تم التوصيل' },
+    });
+    if (existingOrder.length >= 3) {
       return res.status(400).json({
         success: false,
         message: '⚠️ لا يمكن إنشاء أكثر من 3 طلبات غير مكتملة',
@@ -123,7 +154,7 @@ exports.viewspicificorderitem = async (req, res) => {
       });
     }
 
-    const orders = await spicificOrder.find({ user:userId });
+    const orders = await spicificOrder.find({ user: userId });
 
     res.status(200).json({
       success: true,
@@ -140,8 +171,6 @@ exports.viewspicificorderitem = async (req, res) => {
   }
 };
 
-
-
 exports.getOrdersForSeller = async (req, res) => {
   try {
     const sellerId = req.params.sellerId;
@@ -150,30 +179,30 @@ exports.getOrdersForSeller = async (req, res) => {
         path: 'cartIds',
         populate: {
           path: 'partId',
-          match: { user: sellerId }, 
+          match: { user: sellerId },
           select: 'name price user imageUrl location',
         },
       })
-      .populate('userId', 'name email') 
+      .populate('userId', 'name email')
       .sort({ createdAt: -1 });
 
     const filteredOrders = orders
-      .map(order => {
-        const sellerParts = order.cartIds.filter(item => item.partId);
+      .map((order) => {
+        const sellerParts = order.cartIds.filter((item) => item.partId);
         if (sellerParts.length > 0) {
           return {
             orderId: order._id,
-            customer: order.userId, 
+            customer: order.userId,
             status: order.status,
             createdAt: order.createdAt,
-            items: sellerParts.map(item => ({
+            items: sellerParts.map((item) => ({
               partId: item.partId._id,
               name: item.partId.name,
               price: item.partId.price,
               quantity: item.quantity,
               total: item.quantity * (item.partId.price || 0),
               imageUrl: item.partId.imageUrl,
-              location: item.partId.location
+              location: item.partId.location,
             })),
             totalAmount: sellerParts.reduce(
               (sum, item) => sum + item.quantity * (item.partId.price || 0),
@@ -183,7 +212,7 @@ exports.getOrdersForSeller = async (req, res) => {
         }
         return null;
       })
-      .filter(order => order !== null);
+      .filter((order) => order !== null);
 
     res.status(200).json({
       success: true,

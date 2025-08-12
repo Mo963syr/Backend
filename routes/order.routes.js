@@ -5,7 +5,7 @@ const {
   addOrder,
   vieworderitem,
   getOrdersForSeller,
-  updateOrderStatus,viewspicificorderitem,getOrdersForUserByHisBrands
+  updateOrderStatus,viewspicificorderitem,getUserBrandOrders
 } = require('../controllers/order.controller');
 
 const { addspicificorder } = require('../controllers/part.Controller');
@@ -14,7 +14,7 @@ router.post('/addspicificorder', upload.single('image'), addspicificorder);
 router.post('/create', addOrder);
 router.get('/viewuserorder/:userId', vieworderitem);
 router.get('/viewuserspicificorder/:userId', viewspicificorderitem);
-// router.get('/getOrdersMatchedByUserBrands/:userId', getOrdersForUserByHisBrands);
+router.get('/getUserBrandOrders/:userId', getUserBrandOrders);
 router.get('/getOrderForSellrer/:sellerId', getOrdersForSeller);
 router.put('/updateOrderStatus/:orderId', updateOrderStatus);
 
