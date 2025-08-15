@@ -10,7 +10,10 @@ const userSchema = new mongoose.Schema({
     required: [true, 'يجب إدخال البريد الإلكتروني'],
     unique: true,
     lowercase: true,
-    match: [/\S+@\S+\.\S+/, 'بريد إلكتروني غير صالح']
+     match: [
+      /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+      'البريد الإلكتروني غير صالح. يرجى إدخال بريد إلكتروني صحيح.',
+    ],
   },
   password: {
     type: String,
@@ -33,6 +36,12 @@ const userSchema = new mongoose.Schema({
   prands: {
     type: [String], 
     default: []
+  },
+  role:{
+    type: String,
+    required:true,
+    enum:['user','seller','worker','delevery'],
+    default:'user'
   }
 });
 
