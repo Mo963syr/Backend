@@ -8,8 +8,8 @@ const partSchema = new mongoose.Schema(
       trim: true,
       maxlength: [100, 'اسم القطعة لا يمكن أن يتجاوز 100 حرف'],
     },
-    serialNumber:{
-        type: String
+    serialNumber: {
+      type: String,
     },
     manufacturer: {
       type: String,
@@ -32,7 +32,7 @@ const partSchema = new mongoose.Schema(
     },
     category: {
       type: String,
-      enum: ['محرك', 'هيكل', 'فرامل', 'كهرباء', 'إطارات', 'نظام التعليق',],
+      enum: ['محرك', 'هيكل', 'فرامل', 'كهرباء', 'إطارات', 'نظام التعليق'],
       required: [true, 'يجب اختيار تصنيف القطعة'],
     },
     status: {
@@ -77,6 +77,14 @@ const partSchema = new mongoose.Schema(
         },
       },
     ],
+
+    // الحقل الجديد: تعليقات مربوطة بموديل Comment
+    comments: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Comment',
+      },
+    ],
   },
   {
     timestamps: true,
@@ -85,7 +93,7 @@ const partSchema = new mongoose.Schema(
   }
 );
 
-// إضافة فهرس لتحسين أداء الاستعلامات
+// الفهارس
 partSchema.index({ manufacturer: 1 });
 partSchema.index({ model: 1 });
 partSchema.index({ category: 1 });

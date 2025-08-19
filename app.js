@@ -7,7 +7,7 @@ const cartRoutes = require('./routes/cart.Routes');
 const orderRoutes = require('./routes/order.routes');
 const modelsRoute = require('./routes/models');
 const favoritesRoutes = require('./routes/favorites.Routes');
-
+const Comment =require('./routes/comment.routes')
 const app = express();
 app.use(express.json());
 
@@ -19,6 +19,7 @@ app.use('/cart', cartRoutes);
 app.use('/order', orderRoutes);
 app.use('/api/models', modelsRoute);
 app.use('/favorites', favoritesRoutes);
+app.use('/comment',Comment);
 
 const uri =
   'mongodb+srv://moafaqaqeed01:JqphSStXpXgsv8t@cluster0.vhz1h.mongodb.net/PartTec?retryWrites=true&w=majority';
