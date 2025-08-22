@@ -5,6 +5,43 @@ const cloudinary = require('../utils/cloudinary');
 
 const mongoose = require('mongoose');
 
+
+
+exports.deletePart = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const deleted = await part.findByIdAndDelete(id);
+    if (!deleted) {
+      return res.status(404).json({ message: "❌ القطعة غير موجودة" });
+    }
+
+    res.json({ message: "✅ تم حذف القطعة", part: deleted });
+  } catch (err) {
+    console.error("خطأ أثناء الحذف:", err);
+    res.status(500).json({ message: "⚠️ خطأ في السيرفر" });
+  }
+};
+
+
+exports.updatePart = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updates = req.body;
+
+    const updated = await part.findByIdAndUpdate(id, updates, { new: true });
+    if (!updated) {
+      return res.status(404).json({ message: "❌ القطعة غير موجودة" });
+    }
+
+    res.json({ message: "✅ تم تعديل القطعة", part: updated });
+  } catch (err) {
+    console.error("خطأ أثناء التعديل:", err);
+    res.status(500).json({ message: "⚠️ خطأ في السيرفر" });
+  }
+};
+
+
 exports.deletePart = async (req, res) => {
   try {
     const { partId } = req.body;
