@@ -9,7 +9,7 @@ const recommendationOfferSchema = new mongoose.Schema(
     },
     order: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'spicificorder', // معرف الطلب
+      ref: 'spicificorderschema', // معرف الطلب
       required: true,
     },
     price: {
@@ -33,4 +33,7 @@ const recommendationOfferSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-module.exports = mongoose.model('RecommendationOffer', recommendationOfferSchema);
+module.exports = mongoose.model(
+  'RecommendationOffer',
+  recommendationOfferSchema
+);

@@ -1,9 +1,8 @@
 const express = require('express');
 const router = express.Router();
-const recommendationOfferController = require('../controllers/recommendationOffer.Controller');
-// const { authMiddleware } = require('../middleware/auth'); // إذا عندك حماية JWT
+const {createOffer,getOffersByOrder} = require('../controllers/recommendationOffer.Controller');
 
-// إضافة عرض جديد
-router.post('/recommendation-offer', /*authMiddleware,*/ recommendationOfferController.createOffer);
 
+router.post('/recommendation-offer',  createOffer);
+router.get('/recommendation-offer/:orderId', /*authMiddleware,*/ getOffersByOrder);
 module.exports = router;
