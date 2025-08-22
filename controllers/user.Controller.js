@@ -21,6 +21,35 @@ exports.addUser = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+exports.putprands = async (req, res) => {
+  try {
+    let { prand } = req.body;   
+    const { userId } = req.params;
+
+    if (typeof prand === "string") {
+      prand = prand.toLowerCase();
+    }
+
+    const user = await User.findByIdAndUpdate(
+      userId,
+      { $addToSet: { prands: prand } }, 
+      { new: true }
+    );
+
+    if (!user) {
+      return res.status(404).json({ message: "❌ User not found" });
+    }
+
+    res.status(200).json({
+      message: "✅ prand added successfully",
+      user,
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+
 exports.viewsellerprands = async (req, res) => {
   try {
     const { userId } = req.params;

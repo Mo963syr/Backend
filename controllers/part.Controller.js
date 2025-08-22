@@ -5,24 +5,21 @@ const cloudinary = require('../utils/cloudinary');
 
 const mongoose = require('mongoose');
 
-
-
 exports.deletePart = async (req, res) => {
   try {
     const { id } = req.params;
 
     const deleted = await part.findByIdAndDelete(id);
     if (!deleted) {
-      return res.status(404).json({ message: "❌ القطعة غير موجودة" });
+      return res.status(404).json({ message: '❌ القطعة غير موجودة' });
     }
 
-    res.json({ message: "✅ تم حذف القطعة", part: deleted });
+    res.json({ message: '✅ تم حذف القطعة', part: deleted });
   } catch (err) {
-    console.error("خطأ أثناء الحذف:", err);
-    res.status(500).json({ message: "⚠️ خطأ في السيرفر" });
+    console.error('خطأ أثناء الحذف:', err);
+    res.status(500).json({ message: '⚠️ خطأ في السيرفر' });
   }
 };
-
 
 exports.updatePart = async (req, res) => {
   try {
@@ -31,16 +28,15 @@ exports.updatePart = async (req, res) => {
 
     const updated = await part.findByIdAndUpdate(id, updates, { new: true });
     if (!updated) {
-      return res.status(404).json({ message: "❌ القطعة غير موجودة" });
+      return res.status(404).json({ message: '❌ القطعة غير موجودة' });
     }
 
-    res.json({ message: "✅ تم تعديل القطعة", part: updated });
+    res.json({ message: '✅ تم تعديل القطعة', part: updated });
   } catch (err) {
-    console.error("خطأ أثناء التعديل:", err);
-    res.status(500).json({ message: "⚠️ خطأ في السيرفر" });
+    console.error('خطأ أثناء التعديل:', err);
+    res.status(500).json({ message: '⚠️ خطأ في السيرفر' });
   }
 };
-
 
 exports.deletePart = async (req, res) => {
   try {
@@ -89,7 +85,6 @@ exports.getCompatibleParts = async (req, res) => {
       });
     }
 
-
     const compatibleParts = await part
       .find({
         $or: user.cars.map((car) => ({
@@ -122,6 +117,67 @@ exports.getCompatibleParts = async (req, res) => {
     console.error('حدث خطأ في جلب القطع المتوافقة:', error);
     res.status(500).json({
       success: false,
+      message: 'حدث خطأ في الخادم',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined,
+    });
+  }
+};
+exports.CompatibleSpicificOrders = async (req, res) => {
+  try {
+    const { userid } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(userid)) {
+      return res.status(400).json({
+        success: false,
+        message: 'معرف المستخدم غير صالح',
+      });
+    }
+
+    const user = await User.findById(userid).select('prands');
+
+    // if (!user || !user.cars || user.cars.length === 0) {
+    //   const part = await part.find();
+    //   return res.status(200).json({
+    //     success: true,
+    //     parts: part,
+    //     message: 'تم ارجاع كل السيارات',
+    //   });
+    // }
+
+    const compatibleParts = await spicificorder
+      .find({
+        $or: user.prands.map((prand) => ({
+          manufacturer: prand,
+        })),
+      })
+      .select('name serialNumber manufacturer model year status price imageUrl notes ')
+      .sort({ price: 1 });
+
+
+    res.status(200).json({
+      success: true,
+      userprands: user.prands,
+      compatibleParts: compatibleParts.map((prand) => ({
+        id: prand._id,
+        name: prand.name,
+        serialNumber: prand.serialNumber,
+        manufacturer: prand.manufacturer,
+        model: prand.model,
+        year: prand.year,
+        notes: prand.notes,
+        status: prand.status,
+        price: prand.price,
+        imageUrl: prand.imageUrl || '/default-part-image.jpg',
+      })),
+      meta: {
+        totalorders: compatibleParts.length,
+      },
+    });
+  } catch (error) {
+    console.error('حدث خطأ في جلب القطع المتوافقة:', error);
+    res.status(500).json({
+      success: f,
+      alse,
       message: 'حدث خطأ في الخادم',
       error: process.env.NODE_ENV === 'development' ? error.message : undefined,
     });

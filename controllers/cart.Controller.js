@@ -1,4 +1,5 @@
 const cart = require('../models/cart.model');
+const spicificorder = require('../models/spicificPartOrder.model');
 const User = require('../models/user.Model');
 const Part = require('../models/part.Model');
 const Order = require('../models/order.model');
@@ -49,13 +50,12 @@ exports.getCartItemsForSeller = async (req, res) => {
 
 exports.addPart = async (req, res) => {
   try {
-    const { partId, userId,} = req.body;
+    const { partId, userId } = req.body;
 
     const cartData = {
       partId,
       userId,
     };
-
 
     const addCart = new cart(cartData);
     await addCart.save();
@@ -71,11 +71,9 @@ exports.addPart = async (req, res) => {
       .json({ error: '❌ فشل في إضافة المنتج', details: error.message });
   }
 };
-
 exports.viewcartitem = async (req, res) => {
   try {
     const { userId } = req.params;
-
 
     if (!mongoose.Types.ObjectId.isValid(userId)) {
       return res.status(400).json({
@@ -85,14 +83,80 @@ exports.viewcartitem = async (req, res) => {
     }
 
     const cartItems = await cart
-      .find({ userId ,status:'قيد المعالجة' })
+      .find({ userId, status: 'قيد المعالجة' })
       .populate('partId')
       .sort({ createdAt: -1 });
+
+    const spicificorderItem = await spicificorder.find({
+      user: userId,
+      status: 'قيد المعالجة',
+    });
+
+    const normalizedCart = cartItems.map((item) => ({
+      _id: item._id,
+      partId: item.partId
+        ? {
+            _id: item.partId._id,
+            name: item.partId.name,
+            manufacturer: item.partId.manufacturer,
+            model: item.partId.model,
+            year: item.partId.year,
+            category: item.partId.category,
+            status: item.partId.status,
+            price: item.partId.price,
+            imageUrl: item.partId.imageUrl,
+            user: item.partId.user,
+            compatibleCars: item.partId.compatibleCars || [],
+            createdAt: item.partId.createdAt,
+            updatedAt: item.partId.updatedAt,
+            __v: item.partId.__v,
+            comments: item.partId.comments || [],
+            age: item.partId.age,
+            id: item.partId.id,
+          }
+        : null,
+      userId: item.userId,
+      quantity: item.quantity,
+      status: item.status,
+      createdAt: item.createdAt,
+      updatedAt: item.updatedAt,
+      __v: item.__v,
+    }));
+
+    const normalizedSpicific = spicificorderItem.map((item) => ({
+      _id: item._id,
+      partId: {
+        _id: item.partId?._id || null,
+        name: item.name || '',
+        manufacturer: item.manufacturer || '',
+        model: item.model || '',
+        year: item.year || null,
+        category: item.category || '',
+        status: item.status || '',
+        price: item.price || 0,
+        imageUrl: item.imageUrl || '',
+        user: item.user || userId,
+        compatibleCars: [],
+        createdAt: item.createdAt,
+        updatedAt: item.updatedAt,
+        __v: 0,
+        comments: [],
+        age: 1,
+        id: item.partId?._id || null,
+      },
+      userId: item.user,
+      quantity: item.quantity || 1,
+      status: item.status,
+      createdAt: item.createdAt,
+      updatedAt: item.updatedAt,
+      __v: 0,
+    }));
 
     res.status(200).json({
       success: true,
       message: '✅ تم تحميل عناصر السلة بنجاح',
-      cart: cartItems,
+      cart: normalizedCart,
+      spicificorderItem: normalizedSpicific,
     });
   } catch (error) {
     console.error('حدث خطأ أثناء جلب عناصر السلة:', error);
@@ -102,6 +166,7 @@ exports.viewcartitem = async (req, res) => {
     });
   }
 };
+
 exports.updateCartStatus = async (req, res) => {
   try {
     const { cartId } = req.params;
@@ -109,21 +174,23 @@ exports.updateCartStatus = async (req, res) => {
 
     const allowedStatuses = ['قيد المعالجة', 'مؤكد', 'ملغي', 'على الطريق'];
     if (!allowedStatuses.includes(status)) {
-      return res.status(400).json({ success: false, message: '❌ حالة غير صالحة' });
+      return res
+        .status(400)
+        .json({ success: false, message: '❌ حالة غير صالحة' });
     }
 
-    const updated = await cart.findByIdAndUpdate(
-      cartId,
-      { status },
-      { new: true }
-    ).populate('partId userId');
-  //  const updateOrder=await Order.findByIdAndUpdate(
-  //     cartId,
-  //     { status },
-  //     { new: true }
-  //   ).populate('partId userId');
+    const updated = await cart
+      .findByIdAndUpdate(cartId, { status }, { new: true })
+      .populate('partId userId');
+    //  const updateOrder=await Order.findByIdAndUpdate(
+    //     cartId,
+    //     { status },
+    //     { new: true }
+    //   ).populate('partId userId');
     if (!updated) {
-      return res.status(404).json({ success: false, message: '❌ لم يتم العثور على العنصر' });
+      return res
+        .status(404)
+        .json({ success: false, message: '❌ لم يتم العثور على العنصر' });
     }
 
     res.status(200).json({
@@ -133,6 +200,12 @@ exports.updateCartStatus = async (req, res) => {
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ success: false, message: '❌ فشل في تحديث الحالة', error: error.message });
+    res
+      .status(500)
+      .json({
+        success: false,
+        message: '❌ فشل في تحديث الحالة',
+        error: error.message,
+      });
   }
 };
