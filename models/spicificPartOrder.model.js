@@ -70,4 +70,4 @@ spicificorderschema.index({ model: 1 });
 spicificorderschema.index({ status: 1 });
 spicificorderschema.index({ user: 1 });
 
-module.exports = mongoose.model('spicificorderschema', spicificorderschema);
+module.exports = mongoose.model('spicificorder', spicificorderschema);
