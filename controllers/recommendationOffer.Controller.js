@@ -1,18 +1,18 @@
 const RecommendationOffer = require('../models/RecommendationOffer.model');
 const SpicificOrder = require('../models/spicificPartOrder.model');
 const OrderSummary = require('../models/orderSummary.model');
-
 exports.applyOfferToOrder = async (req, res) => {
   try {
     const { recommendationOfferId, orderId } = req.body;
 
+  
     const offer = await RecommendationOffer.findById(recommendationOfferId);
     if (!offer) return res.status(404).json({ message: 'عرض التوصية غير موجود' });
 
+  
     const order = await SpicificOrder.findById(orderId);
     if (!order) return res.status(404).json({ message: 'الطلب غير موجود' });
 
-    // تحديث الطلب الأساسي
     order.notes = offer.description;
     order.price = offer.price;
 
@@ -22,23 +22,37 @@ exports.applyOfferToOrder = async (req, res) => {
         order.imageUrls.push(offer.imageUrl);
       }
     }
-    // order.status = 'مؤكد';
-    // await order.save();
 
-    // إضافة نسخة في الجدول الوسيط
+   
+    order.status = 'قيد المعالجة';
+    await order.save();
+
+  
+    offer.status = 'غير متاح';
+    await offer.save();
+
+  
     await OrderSummary.create({
       order: order._id,
       offer: offer._id,
       appliedPrice: offer.price,
       appliedDescription: offer.description,
       appliedImages: offer.imageUrl ? [offer.imageUrl] : [],
+      status: 'قيد المعالجة', 
     });
 
-    res.status(200).json({ message: 'تم ربط العرض بالطلب وتخزين نسخة في الجدول الوسيط', order });
+    res.status(200).json({
+      success: true,
+      message: '✅ تم ربط العرض بالطلب وتحديث الحالات وتخزين نسخة في الجدول الوسيط',
+      order,
+      offer,
+    });
   } catch (err) {
+    console.error('❌ خطأ في applyOfferToOrder:', err);
     res.status(500).json({ message: 'خطأ في الخادم', error: err.message });
   }
 };
+
 
 
 exports.applyOfferToOrde = async (req, res) => {

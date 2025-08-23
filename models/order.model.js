@@ -15,6 +15,12 @@ const orderSchema = new mongoose.Schema(
         required: true,
       },
     ],
+    summaryIds: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'OrderSummary',
+      },
+    ],
     location: {
       type: {
         type: String,
@@ -34,7 +40,7 @@ const orderSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ['قيد التجهيز', 'مؤكد', 'ملغي', 'على الطريق','تم التوصيل'],
+      enum: ['قيد التجهيز', 'مؤكد', 'ملغي', 'على الطريق', 'تم التوصيل'],
       default: 'مؤكد',
     },
   },

@@ -13,8 +13,8 @@ exports.getOrderSummariesByUser = async (req, res) => {
       });
     }
 
-    // نجيب الطلبات الخاصة بالمستخدم
-    const userOrders = await SpicificOrder.find({ user: userId }).select('_id');
+
+    const userOrders = await SpicificOrder.find({ user: userId ,status:'قيد المعالجة'}).select('_id');
 
     if (!userOrders.length) {
       return res.status(200).json({
@@ -26,8 +26,8 @@ exports.getOrderSummariesByUser = async (req, res) => {
 
     const orderIds = userOrders.map(o => o._id);
 
-    // نجيب OrderSummary المرتبطة بمعرفات الطلبات
-    const summaries = await OrderSummary.find({ order: { $in: orderIds } })
+ 
+    const summaries = await OrderSummary.find({ order: { $in: orderIds },status:'قيد المعالجة'})
       .populate('order')
       .populate({
         path: 'offer',
@@ -35,9 +35,8 @@ exports.getOrderSummariesByUser = async (req, res) => {
       })
       .sort({ createdAt: -1 });
 
-    // 🔹 Normalize (تسطيح البيانات)
     const normalized = summaries.map(item => ({
-      // بيانات الطلب
+  
       name: item.order?.name || "",
       manufacturer: item.order?.manufacturer || "",
       model: item.order?.model || "",
@@ -48,7 +47,6 @@ exports.getOrderSummariesByUser = async (req, res) => {
       imageUrl: (item.appliedImages && item.appliedImages.length > 0) ? item.appliedImages[0] : "",
       user: item.order?.user || userId,
 
-      // بيانات العرض بنفس المستوى
       offerId: item.offer?._id || null,
       offerPrice: item.offer?.price || 0,
       offerDescription: item.offer?.description || "",

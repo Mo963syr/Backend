@@ -4,6 +4,7 @@ const Cart = require('../models/cart.model');
 const Order = require('../models/order.model');
 const User = require('../models/user.Model');
 const SpicificOrder = require('../models/spicificPartOrder.model');
+const OrderSummary = require('../models/orderSummary.model');
 
 exports.getUserBrandOrders = async (req, res) => {
   try {
@@ -67,7 +68,11 @@ exports.addOrder = async (req, res) => {
     }
 
     const userCartItems = await Cart.find({ userId, status: 'قيد المعالجة' });
-
+const userspiciorder = await OrderSummary.find({status:"قيد المعالجة"})
+  .populate({
+    path: 'order',
+    match: { user: userId },
+  }).sort({ createdAt: -1 });
     if (userCartItems.length === 0) {
       return res.status(404).json({
         success: false,
@@ -76,10 +81,12 @@ exports.addOrder = async (req, res) => {
     }
 
     const cartIds = userCartItems.map((item) => item._id);
+    const summaryIds = userspiciorder.map((item) => item._id);
 
     const newOrder = new Order({
       userId,
       cartIds,
+      summaryIds,
       location: {
         type: 'Point',
         coordinates,
@@ -170,10 +177,11 @@ exports.viewspicificorderitem = async (req, res) => {
     });
   }
 };
-
 exports.getOrdersForSeller = async (req, res) => {
   try {
     const sellerId = req.params.sellerId;
+
+  
     const orders = await Order.find()
       .populate({
         path: 'cartIds',
@@ -183,40 +191,107 @@ exports.getOrdersForSeller = async (req, res) => {
           select: 'name price user imageUrl location',
         },
       })
+      .populate('userId', 'name email');
+
+
+    const ordersWithSummary = await Order.find()
+      .populate({
+        path: 'summaryIds',
+        populate: [
+          {
+            path: 'order',
+            select: 'name serialNumber manufacturer model year status imageUrl user',
+          },
+          {
+            path: 'offer',
+            match: { seller: sellerId },
+            select: 'status description imageUrl price',
+          },
+        ],
+      })
       .populate('userId', 'name email')
       .sort({ createdAt: -1 });
 
-    const filteredOrders = orders
-      .map((order) => {
-        const sellerParts = order.cartIds.filter((item) => item.partId);
-        if (sellerParts.length > 0) {
-          return {
-            orderId: order._id,
-            customer: order.userId,
-            status: order.status,
-            createdAt: order.createdAt,
-            items: sellerParts.map((item) => ({
-              partId: item.partId._id,
-              name: item.partId.name,
-              price: item.partId.price,
-              quantity: item.quantity,
-              total: item.quantity * (item.partId.price || 0),
-              imageUrl: item.partId.imageUrl,
-              location: item.partId.location,
-            })),
-            totalAmount: sellerParts.reduce(
-              (sum, item) => sum + item.quantity * (item.partId.price || 0),
-              0
-            ),
-          };
-        }
-        return null;
-      })
-      .filter((order) => order !== null);
+ 
+    const fromCart = orders.map((order) => {
+      const sellerParts = order.cartIds.filter((item) => item.partId);
+      if (sellerParts.length === 0) return null;
+
+      return {
+        orderId: order._id,
+        customer: {
+          _id: order.userId?._id,
+          name: order.userId?.name,
+          email: order.userId?.email,
+        },
+        status: order.status,
+        createdAt: order.createdAt,
+        source: 'cart',
+        items: sellerParts.map((item) => ({
+          partId: item.partId._id,
+          name: item.partId.name,
+          manufacturer: null,
+          model: null,
+          year: null,
+          price: item.partId.price,
+          quantity: item.quantity,
+          total: item.quantity * (item.partId.price || 0),
+          imageUrl: item.partId.imageUrl,
+          location: item.partId.location || '',
+          description: '',
+        })),
+        totalAmount: sellerParts.reduce(
+          (sum, item) => sum + item.quantity * (item.partId.price || 0),
+          0
+        ),
+      };
+    }).filter(Boolean);
+
+    const fromSummary = ordersWithSummary.map((order) => {
+      const matchedSummaries = order.summaryIds.filter(
+        (s) => s.offer && s.order
+      );
+
+      if (matchedSummaries.length === 0) return null;
+
+      return {
+        orderId: order._id,
+        customer: {
+          _id: order.userId?._id,
+          name: order.userId?.name,
+          email: order.userId?.email,
+        },
+        status: order.status,
+        createdAt: order.createdAt,
+        source: 'summary',
+        items: matchedSummaries.map((summary) => ({
+          partId: summary.order._id,
+          name: summary.order.name,
+          manufacturer: summary.order.manufacturer,
+          model: summary.order.model,
+          year: summary.order.year,
+          price: summary.offer.price,
+          quantity: 1,
+          total: summary.offer.price,
+          imageUrl: summary.offer.imageUrl || '',
+          location: '',
+          description: summary.offer.description || '',
+        })),
+        totalAmount: matchedSummaries.reduce(
+          (sum, s) => sum + (s.offer?.price || 0),
+          0
+        ),
+      };
+    }).filter(Boolean);
+
+
+    const allOrders = [...fromCart, ...fromSummary].sort(
+      (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+    );
 
     res.status(200).json({
       success: true,
-      orders: filteredOrders,
+      orders: allOrders,
     });
   } catch (error) {
     console.error('❌ Error fetching seller orders:', error);
@@ -227,6 +302,7 @@ exports.getOrdersForSeller = async (req, res) => {
     });
   }
 };
+
 
 exports.updateOrderStatus = async (req, res) => {
   try {

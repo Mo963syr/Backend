@@ -18,7 +18,7 @@ const orderSummarySchema = new mongoose.Schema(
     }, 
     appliedPrice: Number,
     appliedDescription: String,
-    appliedImages: [String], // نخزن الصور هنا أيضًا
+    appliedImages: [String], 
   },
 
   { timestamps: true }
