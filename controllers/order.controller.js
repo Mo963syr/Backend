@@ -171,8 +171,9 @@ exports.vieworderitem = async (req, res) => {
             status: summary.order.status,
             imageUrl: summary.offer.imageUrl || summary.order.imageUrl,
             user: summary.order.user,
+            price: summary.offer.price,
           },
-          price: summary.offer.price,
+         
           quantity: 1,
           status: summary.order.status,
           seller: summary.offer.seller,
