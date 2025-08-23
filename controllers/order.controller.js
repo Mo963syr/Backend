@@ -131,14 +131,74 @@ exports.vieworderitem = async (req, res) => {
         path: 'cartIds',
         populate: {
           path: 'partId',
+          select: 'name price manufacturer model year imageUrl status',
         },
       })
+      .populate({
+        path: 'summaryIds',
+        populate: [
+          {
+            path: 'order',
+            select: 'name manufacturer model year imageUrl status',
+          },
+          {
+            path: 'offer',
+            select: 'price description imageUrl',
+          }
+        ],
+      })
       .sort({ createdAt: -1 });
+
+    const formattedOrders = orders.map(order => {
+      const cartItems = order.cartIds.map(item => ({
+        partId: item.partId?._id,
+        name: item.partId?.name,
+        price: item.partId?.price,
+        quantity: item.quantity,
+        total: item.quantity * (item.partId?.price || 0),
+        imageUrl: item.partId?.imageUrl,
+        manufacturer: item.partId?.manufacturer,
+        model: item.partId?.model,
+        year: item.partId?.year,
+        status: item.status,
+        source: 'cart',
+      }));
+
+      const summaryItems = order.summaryIds
+        .filter(s => s.offer && s.order)
+        .map(s => ({
+          partId: s.order._id,
+          name: s.order.name,
+          manufacturer: s.order.manufacturer,
+          model: s.order.model,
+          year: s.order.year,
+          price: s.offer.price,
+          quantity: 1,
+          total: s.offer.price,
+          imageUrl: s.offer.imageUrl || s.order.imageUrl,
+          description: s.offer.description,
+          status: 'مؤكد',
+          source: 'summary',
+        }));
+
+      const allItems = [...cartItems, ...summaryItems];
+      const totalAmount = allItems.reduce((sum, item) => sum + item.total, 0);
+
+      return {
+        _id: order._id,
+        userId: order.userId,
+        status: order.status,
+        location: order.location,
+        createdAt: order.createdAt,
+        cartIds: allItems,
+        totalAmount,
+      };
+    });
 
     res.status(200).json({
       success: true,
       message: '✅ تم تحميل الطلبات بنجاح',
-      orders,
+      orders: formattedOrders,
     });
   } catch (error) {
     console.error('حدث خطأ أثناء جلب الطلبات:', error);
@@ -149,6 +209,7 @@ exports.vieworderitem = async (req, res) => {
     });
   }
 };
+
 
 exports.viewspicificorderitem = async (req, res) => {
   try {
