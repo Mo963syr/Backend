@@ -33,7 +33,6 @@ exports.getUserBrandOrders = async (req, res) => {
     res.status(500).json({ message: 'خطأ في الخادم', error: err.message });
   }
 };
-
 exports.addOrder = async (req, res) => {
   try {
     const { userId, coordinates } = req.body;
@@ -45,6 +44,7 @@ exports.addOrder = async (req, res) => {
       });
     }
 
+    // التحقق من عدد الطلبات الحالية
     const existingOrder = await Order.find({
       userId,
       status: { $ne: 'تم التوصيل' },
@@ -56,6 +56,7 @@ exports.addOrder = async (req, res) => {
       });
     }
 
+    // التحقق من الإحداثيات
     if (
       !coordinates ||
       !Array.isArray(coordinates) ||
@@ -67,12 +68,9 @@ exports.addOrder = async (req, res) => {
       });
     }
 
+    // جلب عناصر السلة للمستخدم
     const userCartItems = await Cart.find({ userId, status: 'قيد المعالجة' });
-const userspiciorder = await OrderSummary.find({status:"قيد المعالجة"})
-  .populate({
-    path: 'order',
-    match: { user: userId },
-  }).sort({ createdAt: -1 });
+
     if (userCartItems.length === 0) {
       return res.status(404).json({
         success: false,
@@ -80,8 +78,23 @@ const userspiciorder = await OrderSummary.find({status:"قيد المعالجة"
       });
     }
 
+    // جلب ملخصات العروض المرتبطة بهذا المستخدم
+    const userspiciorder = await OrderSummary.find({
+      status: 'قيد المعالجة',
+    })
+      .populate({
+        path: 'order',
+        match: { user: userId },
+      })
+      .sort({ createdAt: -1 });
+
+    // تصفية فقط المرتبطة بالمستخدم
+    const filteredSummaries = userspiciorder.filter(
+      (s) => s.order !== null
+    );
+
     const cartIds = userCartItems.map((item) => item._id);
-    const summaryIds = userspiciorder.map((item) => item._id);
+    const summaryIds = filteredSummaries.map((item) => item._id);
 
     const newOrder = new Order({
       userId,
@@ -95,8 +108,15 @@ const userspiciorder = await OrderSummary.find({status:"قيد المعالجة"
 
     await newOrder.save();
 
+    // تحديث حالة السلة
     await Cart.updateMany(
       { _id: { $in: cartIds } },
+      { $set: { status: 'مؤكد' } }
+    );
+
+    // تحديث حالة الملخصات (اختياري)
+    await OrderSummary.updateMany(
+      { _id: { $in: summaryIds } },
       { $set: { status: 'مؤكد' } }
     );
 
@@ -114,6 +134,7 @@ const userspiciorder = await OrderSummary.find({status:"قيد المعالجة"
     });
   }
 };
+
 exports.vieworderitem = async (req, res) => {
   try {
     const { userId } = req.params;
