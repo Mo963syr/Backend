@@ -35,23 +35,27 @@ const spicificorderschema = new mongoose.Schema(
       enum: ['بانتظار تأكيدك', 'قيد البحث','قيد المعالجة', 'ملغي', 'على الطريق','تم التوصيل' ,'مؤكد'],
       default: 'قيد البحث',
     },
-
+    price: {
+  type: Number,
+  default: 0,
+},
     notes: {
       type: String,
       trim: true,
       maxlength: [500, 'الوصف لا يمكن أن يتجاوز 500 حرف'],
     },
-    imageUrl: {
-      type: String,
-      validate: {
-        validator: function (v) {
-          return /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/.test(
-            v
-          );
-        },
-        message: (props) => `${props.value} ليس رابط صحيح للصورة!`,
+  imageUrls: [
+  {
+    type: String,
+    validate: {
+      validator: function (v) {
+        return /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/.test(v);
       },
+      message: (props) => `${props.value} ليس رابط صحيح للصورة!`,
     },
+  },
+],
+
     user: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',

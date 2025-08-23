@@ -5,6 +5,10 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: [true, 'يجب إدخال الاسم']
   },
+  companyName: {
+    type: String,
+   
+  },
   email: {
     type: String,
     required: [true, 'يجب إدخال البريد الإلكتروني'],

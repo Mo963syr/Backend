@@ -1,38 +1,56 @@
 const User = require('../models/user.Model');
 const bcrypt = require('bcrypt');
-exports.register=async(req,res)=>{
-
-  const { name ,phoneNumber, email , password, role } = req.body;
+exports.register = async (req, res) => {
+  const { name, companyName, phoneNumber, email, password, role, prands } = req.body;
 
   try {
+    // تحقق من وجود الإيميل مسبقاً
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(400).json({ message: 'Email is already in use' });
-    } else if (email == null) {
-      return res.status(400).json({ message: 'email not vaild' });
     }
 
+    if (!email) {
+      return res.status(400).json({ message: 'Email is not valid' });
+    }
+
+    // تحقق من الشروط حسب الدور
+    if (role === "seller") {
+      if (!companyName || companyName.trim() === "") {
+        return res.status(400).json({ message: 'companyName is required for sellers' });
+      }
+      if (!prands || !Array.isArray(prands) || prands.length === 0) {
+        return res.status(400).json({ message: 'prands array is required for sellers' });
+      }
+    }
+
+    // تشفير كلمة المرور
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    // إنشاء المستخدم الجديد
     const user = new User({
-      role,
       name,
+      companyName: role === "seller" ? companyName : undefined,
       phoneNumber,
       email,
       password: hashedPassword,
+      role,
+      prands: role === "seller" ? prands : []
     });
 
     await user.save();
 
+    // تجهيز الرد بدون الباسورد
     const userResponse = {
-      role:user.role,
       _id: user._id,
       name: user.name,
- 
+      companyName: user.companyName,
       phoneNumber: user.phoneNumber,
       email: user.email,
       role: user.role,
+      prands: user.prands
     };
+
     return res.status(201).json({
       message: 'User created successfully',
       user: userResponse,
@@ -42,10 +60,8 @@ exports.register=async(req,res)=>{
     console.error(err);
     res.status(500).json({ error: 'An error occurred during sign up' });
   }
-
-
-
 };
+
 
 exports.login=async(req,res)=>{
   const { email, password } = req.body;
