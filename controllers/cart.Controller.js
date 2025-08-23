@@ -1,8 +1,9 @@
 const cart = require('../models/cart.model');
-const spicificorder = require('../models/spicificPartOrder.model');
+const SpicificOrder = require('../models/spicificPartOrder.model');
 const User = require('../models/user.Model');
 const Part = require('../models/part.Model');
 const Order = require('../models/order.model');
+const OrderSummary = require('../models/orderSummary.model');
 const cloudinary = require('../utils/cloudinary');
 
 const mongoose = require('mongoose');
@@ -82,13 +83,13 @@ exports.viewcartitem = async (req, res) => {
       });
     }
 
-    // جلب محتويات الكارت فقط
+    // جلب عناصر الكارت
     const cartItems = await cart
       .find({ userId, status: 'قيد المعالجة' })
       .populate('partId')
       .sort({ createdAt: -1 });
 
-    // Normalize للكارت
+    // تنسيق عناصر الكارت
     const normalizedCart = cartItems.map(item => ({
       _id: item._id,
       partId: item.partId ? {
@@ -119,10 +120,68 @@ exports.viewcartitem = async (req, res) => {
       source: "cart",
     }));
 
+    // ===== جلب الطلبات الخاصة من OrderSummary =====
+    const userOrders = await SpicificOrder.find({ user: userId, status: 'قيد المعالجة' }).select('_id');
+    const orderIds = userOrders.map(o => o._id);
+
+    const summaries = await OrderSummary.find({ order: { $in: orderIds }, status: 'قيد المعالجة' })
+      .populate('order')
+      .populate({
+        path: 'offer',
+        populate: { path: 'seller', select: 'name email' },
+      })
+      .sort({ createdAt: -1 });
+
+    // تنسيق البيانات لتكون بنفس شكل الكارت
+    const normalizedSummaries = summaries.map((item) => ({
+      _id: item._id,
+      partId: {
+        _id: item.order?._id || null,
+        name: item.order?.name || '',
+        manufacturer: item.order?.manufacturer || '',
+        model: item.order?.model || '',
+        year: item.order?.year || null,
+        category: item.order?.category || '',
+        status: item.status || item.order?.status || '',
+        price: item.appliedPrice || 0,
+        imageUrl: (item.appliedImages && item.appliedImages.length > 0) ? item.appliedImages[0] : '',
+        user: item.order?.user || userId,
+        compatibleCars: [],
+        createdAt: item.createdAt,
+        updatedAt: item.updatedAt,
+        __v: 0,
+        comments: [],
+        age: 0,
+        id: item.order?._id || null,
+      },
+      userId: item.order?.user || userId,
+      quantity: 1,
+      status: item.status || item.order?.status || '',
+      createdAt: item.createdAt,
+      updatedAt: item.updatedAt,
+      __v: 0,
+      source: "summary",
+      offer: item.offer ? {
+        _id: item.offer._id,
+        price: item.offer.price,
+        description: item.offer.description,
+        imageUrl: item.offer.imageUrl,
+        status: item.offer.status,
+        seller: item.offer.seller ? {
+          _id: item.offer.seller._id,
+          name: item.offer.seller.name,
+          email: item.offer.seller.email,
+        } : null,
+      } : null,
+    }));
+
+    const allItems = [...normalizedCart, ...normalizedSummaries];
+    allItems.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
     res.status(200).json({
       success: true,
       message: '✅ تم تحميل محتويات الكارت بنجاح',
-      items: normalizedCart,
+      items: allItems,
     });
   } catch (error) {
     console.error('❌ خطأ أثناء جلب عناصر الكارت:', error);
@@ -133,8 +192,6 @@ exports.viewcartitem = async (req, res) => {
     });
   }
 };
-
-
 
 exports.updateCartStatus = async (req, res) => {
   try {
