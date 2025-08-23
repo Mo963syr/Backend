@@ -114,7 +114,6 @@ const userspiciorder = await OrderSummary.find({status:"قيد المعالجة"
     });
   }
 };
-
 exports.vieworderitem = async (req, res) => {
   try {
     const { userId } = req.params;
@@ -131,7 +130,7 @@ exports.vieworderitem = async (req, res) => {
         path: 'cartIds',
         populate: {
           path: 'partId',
-          select: 'name price manufacturer model year imageUrl status',
+          select: '-__v -compatibleCars -comments',
         },
       })
       .populate({
@@ -139,57 +138,59 @@ exports.vieworderitem = async (req, res) => {
         populate: [
           {
             path: 'order',
-            select: 'name manufacturer model year imageUrl status',
+            select: 'name manufacturer model year status imageUrl user',
           },
           {
             path: 'offer',
-            select: 'price description imageUrl',
-          }
+            select: 'price imageUrl description status',
+            populate: { path: 'seller', select: 'name email' },
+          },
         ],
       })
       .sort({ createdAt: -1 });
 
-    const formattedOrders = orders.map(order => {
-      const cartItems = order.cartIds.map(item => ({
-        partId: item.partId?._id,
-        name: item.partId?.name,
-        price: item.partId?.price,
-        quantity: item.quantity,
-        total: item.quantity * (item.partId?.price || 0),
-        imageUrl: item.partId?.imageUrl,
-        manufacturer: item.partId?.manufacturer,
-        model: item.partId?.model,
-        year: item.partId?.year,
-        status: item.status,
-        source: 'cart',
-      }));
+    const formattedOrders = orders.map((order) => {
+      const cartItems = order.cartIds
+        .filter((item) => item.partId)
+        .map((item) => ({
+          partId: item.partId,
+          quantity: item.quantity,
+          status: item.status,
+          source: 'cart',
+        }));
 
       const summaryItems = order.summaryIds
-        .filter(s => s.offer && s.order)
-        .map(s => ({
-          partId: s.order._id,
-          name: s.order.name,
-          manufacturer: s.order.manufacturer,
-          model: s.order.model,
-          year: s.order.year,
-          price: s.offer.price,
+        .filter((summary) => summary.offer && summary.order)
+        .map((summary) => ({
+          partId: {
+            _id: summary.order._id,
+            name: summary.order.name,
+            manufacturer: summary.order.manufacturer,
+            model: summary.order.model,
+            year: summary.order.year,
+            status: summary.order.status,
+            imageUrl: summary.offer.imageUrl || summary.order.imageUrl,
+            user: summary.order.user,
+          },
+          price: summary.offer.price,
           quantity: 1,
-          total: s.offer.price,
-          imageUrl: s.offer.imageUrl || s.order.imageUrl,
-          description: s.offer.description,
-          status: 'مؤكد',
+          status: summary.order.status,
+          seller: summary.offer.seller,
           source: 'summary',
         }));
 
       const allItems = [...cartItems, ...summaryItems];
-      const totalAmount = allItems.reduce((sum, item) => sum + item.total, 0);
+
+      const totalAmount = allItems.reduce((sum, item) => {
+        const price = item.price || item.partId.price || 0;
+        return sum + (item.quantity || 1) * price;
+      }, 0);
 
       return {
-        _id: order._id,
-        userId: order.userId,
+        orderId: order._id,
         status: order.status,
-        location: order.location,
         createdAt: order.createdAt,
+        location: order.location,
         cartIds: allItems,
         totalAmount,
       };
@@ -201,7 +202,7 @@ exports.vieworderitem = async (req, res) => {
       orders: formattedOrders,
     });
   } catch (error) {
-    console.error('حدث خطأ أثناء جلب الطلبات:', error);
+    console.error('❌ حدث خطأ أثناء جلب الطلبات:', error);
     res.status(500).json({
       success: false,
       message: '❌ فشل في تحميل الطلبات',
@@ -209,7 +210,6 @@ exports.vieworderitem = async (req, res) => {
     });
   }
 };
-
 
 exports.viewspicificorderitem = async (req, res) => {
   try {
