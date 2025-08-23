@@ -123,7 +123,7 @@ exports.getOffersByOrder = async (req, res) => {
   try {
     const { orderId } = req.params;
 
-    const offers = await RecommendationOffer.find({ order: orderId })
+    const offers = await RecommendationOffer.find({ order: orderId,status: 'متاح'  })
       .populate('seller', 'name phone email')
       .populate('order');
 

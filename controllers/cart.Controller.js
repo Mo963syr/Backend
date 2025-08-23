@@ -82,17 +82,13 @@ exports.viewcartitem = async (req, res) => {
       });
     }
 
-
+    // جلب محتويات الكارت فقط
     const cartItems = await cart
       .find({ userId, status: 'قيد المعالجة' })
       .populate('partId')
       .sort({ createdAt: -1 });
 
-  
-    const spicificorderItem = await spicificorder
-      .find({ user: userId, status: 'قيد المعالجة' });
-
-
+    // Normalize للكارت
     const normalizedCart = cartItems.map(item => ({
       _id: item._id,
       partId: item.partId ? {
@@ -120,58 +116,24 @@ exports.viewcartitem = async (req, res) => {
       createdAt: item.createdAt,
       updatedAt: item.updatedAt,
       __v: item.__v,
-      source: "cart", 
+      source: "cart",
     }));
-
-
-    const normalizedSpicific = spicificorderItem.map(item => ({
-      _id: item._id,
-      partId: {
-        _id: item.partId?._id || null,
-        name: item.name || "",
-        manufacturer: item.manufacturer || "",
-        model: item.model || "",
-        year: item.year || null,
-        category: item.category || "",
-        status: item.status || "",
-        price: item.price || 0,
-        imageUrl: item.imageUrl || "",
-        user: item.user || userId,
-        compatibleCars: [],
-        createdAt: item.createdAt,
-        updatedAt: item.updatedAt,
-        __v: 0,
-        comments: [],
-        age: 1,
-        id: item.partId?._id || null,
-      },
-      userId: item.user,
-      quantity: item.quantity || 1,
-      status: item.status,
-      createdAt: item.createdAt,
-      updatedAt: item.updatedAt,
-      __v: 0,
-      source: "spicificorder", 
-    }));
-
-    
-    const allItems = [...normalizedCart, ...normalizedSpicific];
-
-    allItems.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
     res.status(200).json({
       success: true,
-      message: '✅ تم تحميل عناصر السلة بنجاح',
-      items: allItems,
+      message: '✅ تم تحميل محتويات الكارت بنجاح',
+      items: normalizedCart,
     });
   } catch (error) {
-    console.error('حدث خطأ أثناء جلب عناصر السلة:', error);
+    console.error('❌ خطأ أثناء جلب عناصر الكارت:', error);
     res.status(500).json({
       success: false,
-      message: '❌ فشل في تحميل محتوى السلة',
+      message: '⚠️ فشل في تحميل محتويات الكارت',
+      error: error.message,
     });
   }
 };
+
 
 
 exports.updateCartStatus = async (req, res) => {
