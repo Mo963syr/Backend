@@ -35,6 +35,7 @@ exports.register = async (req, res) => {
       email,
       password: hashedPassword,
       role,
+      province ,
       prands: role === "seller" ? prands : []
     });
 
@@ -48,6 +49,7 @@ exports.register = async (req, res) => {
       phoneNumber: user.phoneNumber,
       email: user.email,
       role: user.role,
+      province:province,
       prands: user.prands
     };
 
@@ -81,18 +83,18 @@ exports.login=async(req,res)=>{
       message: 'Sign in successful',
    
       userId: user._id,
-
+      
       role: user.role,
     };
 
-    if (user.role === 'doctor') {
-      response.status = 'doctor dashboard';
+    if (user.role === '') {
+      response.status = ' dashboard';
     } else if (user.role === 'user') {
       response.status = 'user dashboard';
     } else if (user.role === 'coordinator') {
       response.status = 'coordinator dashboard';
-    } else if (user.role === 'employee') {
-      response.status = 'employee dashboard';
+    } else if (user.role === 'delevery') {
+      response.status = 'delevery dashboard';
     }
 
     return res.status(200).json(response);
