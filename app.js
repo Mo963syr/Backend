@@ -8,7 +8,7 @@ const orderRoutes = require('./routes/order.routes');
 const modelsRoute = require('./routes/models');
 const favoritesRoutes = require('./routes/favorites.Routes');
 const req = require('./routes/recommendationOffer.Routes');
-
+const deliveryRoutes = require('./routes/delivery.routes');
 const Comment =require('./routes/comment.routes')
 const app = express();
 app.use(express.json());
@@ -18,7 +18,7 @@ app.use('/user', userRoutes);
 app.use('/auth', userRoutes);
 app.use('/part', partRoutes);
 app.use('/cart', cartRoutes);
-
+app.use('/delivery', deliveryRoutes);
 app.use('/order', orderRoutes);
 app.use('/api/models', modelsRoute);
 app.use('/favorites', favoritesRoutes);

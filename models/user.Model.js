@@ -48,6 +48,17 @@ const userSchema = new mongoose.Schema({
     enum: ['user', 'seller', 'worker', 'delevery'],
     default: 'user',
   },
+
+  province: {
+    type: String,
+    default: 'دمشق',
+  },
+
+  provinceNorm: {
+    type: String,
+    default: '',
+  },
+
 });
 
 module.exports = mongoose.model('User', userSchema);

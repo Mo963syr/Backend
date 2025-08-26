@@ -40,9 +40,24 @@ const orderSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ['قيد التجهيز', 'مؤكد', 'ملغي', 'على الطريق', 'تم التوصيل'],
+      enum: ['قيد التجهيز', 'مؤكد', 'مستلمة', 'على الطريق', 'تم التوصيل', 'ملغي'],
       default: 'مؤكد',
     },
+  
+    delivery: {
+      driverId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+      fee: { type: Number, default: null },
+      acceptedAt: { type: Date },
+      startedAt: { type: Date },
+      deliveredAt: { type: Date },
+      canceledAt: { type: Date },
+      canceledBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+      cancelReason: { type: String, default: '' },
+
+      province: { type: String, default: '' },
+      provinceNorm: { type: String, default: '' },
+    },
+
   },
   { timestamps: true }
 );

@@ -68,6 +68,7 @@ exports.addOrder = async (req, res) => {
       });
     }
 
+
     // جلب عناصر السلة للمستخدم
     const userCartItems = await Cart.find({ userId, status: 'قيد المعالجة' });
 
@@ -96,15 +97,23 @@ exports.addOrder = async (req, res) => {
     const cartIds = userCartItems.map((item) => item._id);
     const summaryIds = filteredSummaries.map((item) => item._id);
 
+    // جلب المستخدم لتحديد المحافظة
+    const userDoc = await User.findById(userId).select('province provinceNorm');
+    const orderProvince = (userDoc?.province || '').toString();
+    const orderProvinceNorm = (userDoc?.provinceNorm || orderProvince).toString().trim().toLowerCase();
+
     const newOrder = new Order({
       userId,
       cartIds,
       summaryIds,
-      location: {
-        type: 'Point',
-        coordinates,
+      location: { type: 'Point', coordinates },
+      // حقل التوصيل يُملأ بالمحافظة لاستخدامها لاحقًا في فلترة الطلبات
+      delivery: {
+        province: orderProvince,
+        provinceNorm: orderProvinceNorm,
       },
     });
+
 
     await newOrder.save();
 
