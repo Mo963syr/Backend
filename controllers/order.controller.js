@@ -44,7 +44,7 @@ exports.addOrder = async (req, res) => {
       });
     }
 
-    // التحقق من عدد الطلبات الحالية
+
     const existingOrder = await Order.find({
       userId,
       status: { $ne: 'تم التوصيل' },
@@ -56,7 +56,7 @@ exports.addOrder = async (req, res) => {
       });
     }
 
-    // التحقق من الإحداثيات
+  
     if (
       !coordinates ||
       !Array.isArray(coordinates) ||
@@ -69,7 +69,6 @@ exports.addOrder = async (req, res) => {
     }
 
 
-    // جلب عناصر السلة للمستخدم
     const userCartItems = await Cart.find({ userId, status: 'قيد المعالجة' });
 
     if (userCartItems.length === 0) {
@@ -79,7 +78,7 @@ exports.addOrder = async (req, res) => {
       });
     }
 
-    // جلب ملخصات العروض المرتبطة بهذا المستخدم
+
     const userspiciorder = await OrderSummary.find({
       status: 'قيد المعالجة',
     })
@@ -89,7 +88,7 @@ exports.addOrder = async (req, res) => {
       })
       .sort({ createdAt: -1 });
 
-    // تصفية فقط المرتبطة بالمستخدم
+ 
     const filteredSummaries = userspiciorder.filter(
       (s) => s.order !== null
     );
@@ -97,7 +96,7 @@ exports.addOrder = async (req, res) => {
     const cartIds = userCartItems.map((item) => item._id);
     const summaryIds = filteredSummaries.map((item) => item._id);
 
-    // جلب المستخدم لتحديد المحافظة
+   
     const userDoc = await User.findById(userId).select('province provinceNorm');
     const orderProvince = (userDoc?.province || '').toString();
     const orderProvinceNorm = (userDoc?.provinceNorm || orderProvince).toString().trim().toLowerCase();
@@ -107,7 +106,7 @@ exports.addOrder = async (req, res) => {
       cartIds,
       summaryIds,
       location: { type: 'Point', coordinates },
-      // حقل التوصيل يُملأ بالمحافظة لاستخدامها لاحقًا في فلترة الطلبات
+   
       delivery: {
         province: orderProvince,
         provinceNorm: orderProvinceNorm,
