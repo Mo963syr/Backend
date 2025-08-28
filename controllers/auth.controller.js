@@ -1,7 +1,8 @@
 const User = require('../models/user.Model');
 const bcrypt = require('bcrypt');
 exports.register = async (req, res) => {
-  const { name, companyName, phoneNumber, email, password, role, prands } = req.body;
+  const { name, companyName, phoneNumber, email, password, role, prands } =
+    req.body;
 
   try {
     // تحقق من وجود الإيميل مسبقاً
@@ -15,12 +16,16 @@ exports.register = async (req, res) => {
     }
 
     // تحقق من الشروط حسب الدور
-    if (role === "seller") {
-      if (!companyName || companyName.trim() === "") {
-        return res.status(400).json({ message: 'companyName is required for sellers' });
+    if (role === 'seller') {
+      if (!companyName || companyName.trim() === '') {
+        return res
+          .status(400)
+          .json({ message: 'companyName is required for sellers' });
       }
       if (!prands || !Array.isArray(prands) || prands.length === 0) {
-        return res.status(400).json({ message: 'prands array is required for sellers' });
+        return res
+          .status(400)
+          .json({ message: 'prands array is required for sellers' });
       }
     }
 
@@ -30,13 +35,13 @@ exports.register = async (req, res) => {
     // إنشاء المستخدم الجديد
     const user = new User({
       name,
-      companyName: role === "seller" ? companyName : undefined,
+      companyName: role === 'seller' ? companyName : undefined,
       phoneNumber,
       email,
       password: hashedPassword,
       role,
-      province ,
-      prands: role === "seller" ? prands : []
+      province,
+      prands: role === 'seller' ? prands : [],
     });
 
     await user.save();
@@ -49,8 +54,8 @@ exports.register = async (req, res) => {
       phoneNumber: user.phoneNumber,
       email: user.email,
       role: user.role,
-      province:province,
-      prands: user.prands
+      province: province,
+      prands: user.prands,
     };
 
     return res.status(201).json({
@@ -64,8 +69,7 @@ exports.register = async (req, res) => {
   }
 };
 
-
-exports.login=async(req,res)=>{
+exports.login = async (req, res) => {
   const { email, password } = req.body;
 
   try {
@@ -81,9 +85,9 @@ exports.login=async(req,res)=>{
 
     const response = {
       message: 'Sign in successful',
-   
+
       userId: user._id,
-      
+
       role: user.role,
     };
 
@@ -95,6 +99,8 @@ exports.login=async(req,res)=>{
       response.status = 'coordinator dashboard';
     } else if (user.role === 'delevery') {
       response.status = 'delevery dashboard';
+    } else if (user.role === 'mechanic') {
+      response.status = 'mechanic dashboard';
     }
 
     return res.status(200).json(response);
@@ -102,7 +108,4 @@ exports.login=async(req,res)=>{
     console.error(error);
     res.status(500).json({ message: 'Server error' });
   }
-
-
-
 };
