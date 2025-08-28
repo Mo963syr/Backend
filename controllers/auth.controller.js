@@ -1,8 +1,16 @@
 const User = require('../models/user.Model');
 const bcrypt = require('bcrypt');
 exports.register = async (req, res) => {
-  const { name, companyName, phoneNumber, email, password, role, prands } =
-    req.body;
+  const {
+    name,
+    companyName,
+    phoneNumber,
+    email,
+    password,
+    role,
+    prands,
+    province,
+  } = req.body;
 
   try {
     // تحقق من وجود الإيميل مسبقاً
