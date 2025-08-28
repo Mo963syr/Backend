@@ -133,7 +133,7 @@ exports.CompatibleSpicificOrders = async (req, res) => {
       });
     }
 
-    const user = await User.findById(userid).select('prands');
+    const user = await User.findById(userid).select('prands role');
 
     // if (!user || !user.cars || user.cars.length === 0) {
     //   const part = await part.find();
@@ -143,9 +143,15 @@ exports.CompatibleSpicificOrders = async (req, res) => {
     //     message: 'تم ارجاع كل السيارات',
     //   });
     // }
+    console.log(user.role);
+    console.log(user);
     if (user.role !== 'seller') {
-      res.status(200).json('المستخدم ليس بائع');
+      return res.status(403).json({
+        success: false,
+        message: 'المستخدم ليس بائع',
+      });
     }
+
     const compatibleParts = await spicificorder
       .find({
         $or: user.prands.map((prand) => ({
@@ -179,8 +185,7 @@ exports.CompatibleSpicificOrders = async (req, res) => {
   } catch (error) {
     console.error('حدث خطأ في جلب القطع المتوافقة:', error);
     res.status(500).json({
-      success: f,
-      alse,
+      success: false,
       message: 'حدث خطأ في الخادم',
       error: process.env.NODE_ENV === 'development' ? error.message : undefined,
     });
