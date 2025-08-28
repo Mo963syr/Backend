@@ -143,16 +143,19 @@ exports.CompatibleSpicificOrders = async (req, res) => {
     //     message: 'تم ارجاع كل السيارات',
     //   });
     // }
-
+    if (user.role !== 'seller') {
+      res.status(200).json('المستخدم ليس بائع');
+    }
     const compatibleParts = await spicificorder
       .find({
         $or: user.prands.map((prand) => ({
           manufacturer: prand,
         })),
       })
-      .select('name serialNumber manufacturer model year status price imageUrl notes ')
+      .select(
+        'name serialNumber manufacturer model year status price imageUrl notes '
+      )
       .sort({ price: 1 });
-
 
     res.status(200).json({
       success: true,
