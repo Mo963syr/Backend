@@ -71,14 +71,6 @@ exports.addOrder = async (req, res) => {
 
     const userCartItems = await Cart.find({ userId, status: 'قيد المعالجة' });
 
-    if (userCartItems.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: '🚫 لا توجد منتجات في السلة لهذا المستخدم',
-      });
-    }
-
-
     const userspiciorder = await OrderSummary.find({
       status: 'قيد المعالجة',
     })
@@ -89,6 +81,14 @@ exports.addOrder = async (req, res) => {
       .sort({ createdAt: -1 });
 
  
+    if (userCartItems.length === 0 && userspiciorder.length==0) {
+      return res.status(404).json({
+        success: false,
+        message: '🚫 لا توجد منتجات في السلة لهذا المستخدم',
+      });
+    }
+
+
     const filteredSummaries = userspiciorder.filter(
       (s) => s.order !== null
     );
