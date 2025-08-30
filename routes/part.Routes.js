@@ -1,18 +1,20 @@
 const express = require('express');
 const router = express.Router();
 const upload = require('../middleware/upload');
-const {deletePart
-  ,
-CompatibleSpicificOrders
-,
+const {
+  deletePart,
+  CompatibleSpicificOrders,
   updatePart,
   addPart,
   getCompatibleParts,
-  viewAllParts,viewsellerParts
+  viewAllParts,
+  viewsellerParts,
+  ratePart,
 } = require('../controllers/part.Controller');
-router.delete("/delete/:id", deletePart);
-router.put("/update/:id",updatePart);
+router.delete('/delete/:id', deletePart);
+router.put('/update/:id', updatePart);
 router.post('/add', upload.single('image'), addPart);
+router.post('/ratePart/:partId', ratePart);
 router.get('/viewPrivateParts/:userid', getCompatibleParts);
 router.get('/CompatibleSpicificOrders/:userid', CompatibleSpicificOrders);
 router.get('/viewAllParts', viewAllParts);

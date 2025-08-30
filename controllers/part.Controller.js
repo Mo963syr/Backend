@@ -1,9 +1,86 @@
-const part = require('../models/part.Model');
+const SpicificOrder = require('../models/spicificPartOrder.model');
+const Part = require('../models/part.Model');
 const User = require('../models/user.Model');
-const spicificorder = require('../models/spicificPartOrder.model');
+const Order = require('../models/order.model');
 const cloudinary = require('../utils/cloudinary');
-
 const mongoose = require('mongoose');
+
+exports.ratePart = async (req, res) => {
+  try {
+    const { partId } = req.params;
+    const { userId } = req.body;
+    const rating = Number(req.body.rating);
+
+    if (
+      !mongoose.Types.ObjectId.isValid(partId) ||
+      !mongoose.Types.ObjectId.isValid(userId)
+    ) {
+      return res.status(400).json({ success: false, message: 'معرف غير صالح' });
+    }
+
+    if (!Number.isFinite(rating) || rating < 1 || rating > 5) {
+      return res
+        .status(400)
+        .json({ success: false, message: '⚠️ التقييم يجب أن يكون بين 1 و 5' });
+    }
+
+    const order = await Order.findOne({
+      userId,
+      status: 'تم التوصيل',
+    }).populate({
+      path: 'cartIds',
+      select: 'partId',
+      match: { partId: new mongoose.Types.ObjectId(partId) },
+    });
+
+    if (!order || !order.cartIds || order.cartIds.length === 0) {
+      return res
+        .status(403)
+        .json({
+          success: false,
+          message: 'لا يمكنك تقييم هذه القطعة قبل استلامها',
+        });
+    }
+
+    const partDoc = await Part.findById(partId);
+    if (!partDoc) {
+      return res
+        .status(404)
+        .json({ success: false, message: 'القطعة غير موجودة' });
+    }
+
+    const already = (partDoc.ratings || []).some(
+      (r) => r.user.toString() === userId
+    );
+    if (already) {
+      return res
+        .status(400)
+        .json({ success: false, message: 'لقد قمت بتقييم هذه القطعة سابقًا' });
+    }
+
+    const ratings = [...(partDoc.ratings || []), { user: userId, rating }];
+    const sum = ratings.reduce((a, r) => a + Number(r.rating || 0), 0);
+    const avgRating = Number((sum / ratings.length).toFixed(2));
+    const ratingsCount = ratings.length;
+
+    await Part.updateOne(
+      { _id: partId },
+      {
+        $push: { ratings: { user: userId, rating } },
+        $set: { avgRating, ratingsCount },
+      }
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: '✅ تم حفظ التقييم بنجاح',
+      data: { avgRating, ratingsCount },
+    });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ success: false, message: 'خطأ في الخادم' });
+  }
+};
 
 exports.deletePart = async (req, res) => {
   try {

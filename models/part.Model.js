@@ -78,13 +78,29 @@ const partSchema = new mongoose.Schema(
       },
     ],
 
-    // الحقل الجديد: تعليقات مربوطة بموديل Comment
     comments: [
       {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Comment',
       },
     ],
+  ratings: [
+  {
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      required: true,
+    },
+    rating: {
+      type: Number,
+      min: 1,
+      max: 5,
+      required: true,
+    },
+  }
+],
+
+
   },
   {
     timestamps: true,
@@ -93,7 +109,6 @@ const partSchema = new mongoose.Schema(
   }
 );
 
-// الفهارس
 partSchema.index({ manufacturer: 1 });
 partSchema.index({ model: 1 });
 partSchema.index({ category: 1 });
@@ -101,9 +116,15 @@ partSchema.index({ status: 1 });
 partSchema.index({ price: 1 });
 partSchema.index({ user: 1 });
 
-// Virtual لحساب عمر القطعة
+
 partSchema.virtual('age').get(function () {
   return new Date().getFullYear() - this.year;
+});
+
+partSchema.virtual('averageRating').get(function () {
+  if (!this.ratings || this.ratings.length === 0) return 0;
+  const total = this.ratings.reduce((sum, r) => sum + r.rating, 0);
+  return (total / this.ratings.length).toFixed(1);
 });
 
 module.exports = mongoose.model('Part', partSchema);
