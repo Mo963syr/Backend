@@ -1,5 +1,5 @@
 const SpicificOrder = require('../models/spicificPartOrder.model');
-const Part = require('../models/part.Model');
+const part = require('../models/part.Model');
 const User = require('../models/user.Model');
 const Order = require('../models/order.model');
 const cloudinary = require('../utils/cloudinary');
@@ -42,7 +42,7 @@ exports.ratePart = async (req, res) => {
         });
     }
 
-    const partDoc = await Part.findById(partId);
+    const partDoc = await part.findById(partId);
     if (!partDoc) {
       return res
         .status(404)
