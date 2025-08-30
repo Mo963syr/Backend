@@ -10,11 +10,13 @@ const {
   viewAllParts,
   viewsellerParts,
   ratePart,
+  getPartRatings,
 } = require('../controllers/part.Controller');
 router.delete('/delete/:id', deletePart);
 router.put('/update/:id', updatePart);
 router.post('/add', upload.single('image'), addPart);
 router.post('/ratePart/:partId', ratePart);
+router.get('/getPartRatings/:partId', getPartRatings);
 router.get('/viewPrivateParts/:userid', getCompatibleParts);
 router.get('/CompatibleSpicificOrders/:userid', CompatibleSpicificOrders);
 router.get('/viewAllParts', viewAllParts);

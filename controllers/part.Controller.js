@@ -5,6 +5,91 @@ const Order = require('../models/order.model');
 const cloudinary = require('../utils/cloudinary');
 const mongoose = require('mongoose');
 
+exports.getPartRatings = async (req, res) => {
+  try {
+    const { partId } = req.params;
+    const page  = Math.max(parseInt(req.query.page || '1', 10), 1);
+    const limit = Math.min(Math.max(parseInt(req.query.limit || '10', 10), 1), 100);
+    const skip  = (page - 1) * limit;
+
+    if (!mongoose.Types.ObjectId.isValid(partId)) {
+      return res.status(400).json({ success: false, message: 'معرّف غير صالح' });
+    }
+
+    const partDoc = await part.findById(
+      partId,
+      { ratings: 1, avgRating: 1, ratingsCount: 1 }
+    )
+      .populate({ path: 'ratings.user', select: 'name email role', options: { lean: true } })
+      .lean();
+
+    if (!partDoc) {
+      return res.status(404).json({ success: false, message: 'القطعة غير موجودة' });
+    }
+
+    // حوّل أي قيمة إلى مصفوفة آمنة
+    const raw = partDoc.ratings ?? [];
+    const ratings = Array.isArray(raw)
+      ? raw
+      : (raw && typeof raw === 'object' ? Object.values(raw) : []);
+
+    // لو ما في تقييمات، رجّع صفر بدون أخطاء
+    if (!ratings.length) {
+      return res.status(200).json({
+        success: true,
+        data: {
+          partId,
+          avgRating: Number(partDoc.avgRating || 0),
+          ratingsCount: Number(partDoc.ratingsCount || 0),
+          breakdown: {1:0,2:0,3:0,4:0,5:0},
+          page,
+          limit,
+          items: [],
+        },
+      });
+    }
+
+    // إحصائيات
+    const counts = { 1:0,2:0,3:0,4:0,5:0 };
+    for (const r of ratings) {
+      const v = Number(r?.rating ?? 0);
+      if (v >= 1 && v <= 5) counts[v] += 1;
+    }
+    const total = ratings.length;
+    const sum   = ratings.reduce((a, r) => a + Number(r?.rating ?? 0), 0);
+    const avg   = Number((sum / total).toFixed(2));
+
+    // ترقيم صفحات + ترتيب زمني
+    const items = ratings
+      .slice()
+      .sort((a, b) => new Date(b?.createdAt || 0) - new Date(a?.createdAt || 0))
+      .slice(skip, skip + limit)
+      .map(r => ({
+        userId: r?.user?._id ?? r?.user ?? null,
+        userName: r?.user?.name ?? 'مستخدم',
+        rating: Number(r?.rating ?? 0),
+        createdAt: r?.createdAt ?? null,
+      }));
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        partId,
+        avgRating: Number(partDoc.avgRating ?? avg),
+        ratingsCount: Number(partDoc.ratingsCount ?? total),
+        breakdown: counts,
+        page,
+        limit,
+        items,
+      },
+    });
+  } catch (e) {
+    console.error(e);
+    return res.status(500).json({ success: false, message: 'خطأ في الخادم' });
+  }
+};
+
+
 exports.ratePart = async (req, res) => {
   try {
     const { partId } = req.params;
@@ -32,14 +117,12 @@ exports.ratePart = async (req, res) => {
       select: 'partId',
       match: { partId: new mongoose.Types.ObjectId(partId) },
     });
-console.log(order);
-    if (!order || !order.cartIds || order.cartIds.length === 0) {
-      return res
-        .status(403)
-        .json({
-          success: false,
-          message: 'لا يمكنك تقييم هذه القطعة قبل استلامها',
-        });
+    console.log(order);
+    if (!order) {
+      return res.status(403).json({
+        success: false,
+        message: 'لا يمكنك تقييم هذه القطعة قبل استلامها',
+      });
     }
 
     const partDoc = await part.findById(partId);
