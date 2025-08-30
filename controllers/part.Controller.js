@@ -32,7 +32,7 @@ exports.ratePart = async (req, res) => {
       select: 'partId',
       match: { partId: new mongoose.Types.ObjectId(partId) },
     });
-
+console.log(order);
     if (!order || !order.cartIds || order.cartIds.length === 0) {
       return res
         .status(403)
@@ -63,7 +63,7 @@ exports.ratePart = async (req, res) => {
     const avgRating = Number((sum / ratings.length).toFixed(2));
     const ratingsCount = ratings.length;
 
-    await Part.updateOne(
+    await part.updateOne(
       { _id: partId },
       {
         $push: { ratings: { user: userId, rating } },
