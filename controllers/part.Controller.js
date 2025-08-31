@@ -464,7 +464,6 @@ exports.addPart = async (req, res) => {
     res.status(500).json({ error: '❌ فشل في إضافة المنتج' });
   }
 };
-
 exports.addspicificorder = async (req, res) => {
   try {
     const {
@@ -472,48 +471,55 @@ exports.addspicificorder = async (req, res) => {
       manufacturer,
       model,
       year,
-      status,
-      user,
       serialNumber,
       notes,
-    
+      user, 
     } = req.body;
-    //     const users=await User.findById(user);
 
-    //     if(!users){
-    //  return res.status(404).json({
-    //     success: false,
-    //     message: '🚫 المستخدم غير موجود في قاعدة البيانات',
-    //   });
-    //     }
-    let imageUrl = req.file ? req.file.path : null; // Changed from const to let
-
-    if (req.file) {
-      const result = await cloudinary.uploader.upload(req.file.path);
-      imageUrl = result.secure_url; // Now this works because imageUrl is let
+    if (!mongoose.Types.ObjectId.isValid(user)) {
+      return res.status(400).json({
+        success: false,
+        message: '⚠️ معرف المستخدم غير صالح',
+      });
     }
 
-    const newPart = new SpicificOrder({
+    // تحقق من أن المستخدم موجود
+    const userExists = await User.findById(user);
+    if (!userExists) {
+      return res.status(404).json({
+        success: false,
+        message: '🚫 المستخدم غير موجود في قاعدة البيانات',
+      });
+    }
+
+    let imageUrl = null;
+    if (req.file) {
+      const result = await cloudinary.uploader.upload(req.file.path);
+      imageUrl = result.secure_url;
+    }
+
+    const newOrder = new SpicificOrder({
       name,
       manufacturer,
-      serialNumber,
       model,
       year,
-      status,
-      user,
-      imageUrl,
+      serialNumber,
       notes,
-    
+  // ممكن تستغني عنه وتستخدم user.role بدلًا منه
+      user,
+      imageUrls: imageUrl ? [imageUrl] : [],
     });
 
-    await newPart.save();
+    await newOrder.save();
 
     res.status(201).json({
-      message: '✅ تم إضافة المنتج',
-      part: newPart,
+      success: true,
+      message: '✅ تم إضافة الطلب',
+      part: newOrder,
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: '❌ فشل في إضافة المنتج' });
+    res.status(500).json({ success: false, error: '❌ فشل في إضافة الطلب' });
   }
 };
+
