@@ -5,11 +5,16 @@ const {
   addOrder,
   vieworderitem,
   getOrdersForSeller,
-  updateOrderStatus,viewspicificorderitem,getUserBrandOrders
+  updateOrderStatus,
+  viewspicificorderitem,
+  getUserBrandOrders,
+  viewspicificordercompleted,
 } = require('../controllers/order.controller');
 
 const { addspicificorder } = require('../controllers/part.Controller');
-const { getOrderSummariesByUser } = require('../controllers/orderSummary.Controller');
+const {
+  getOrderSummariesByUser,
+} = require('../controllers/orderSummary.Controller');
 // const { createOffer ,getOffersByOrder } = require('../controllers/recommendationOffer.Controller');
 router.post('/addspicificorder', upload.single('image'), addspicificorder);
 router.post('/create', addOrder);
@@ -19,7 +24,7 @@ router.get('/getUserBrandOrders/:userId', getUserBrandOrders);
 router.get('/getOrderForSellrer/:sellerId', getOrdersForSeller);
 router.put('/updateOrderStatus/:orderId', updateOrderStatus);
 router.get('/order-summary/:userId', getOrderSummariesByUser);
+router.get('/viewspicificordercompleted/:userId', viewspicificordercompleted);
 // router.post('/recommendation-offer', /*authMiddleware,*/ createOffer);
-
 
 module.exports = router;

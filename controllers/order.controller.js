@@ -246,7 +246,7 @@ exports.viewspicificorderitem = async (req, res) => {
       });
     }
 
-    const orders = await SpicificOrder.find({ user: userId });
+    const orders = await SpicificOrder.find({ user: userId  });
 
     res.status(200).json({
       success: true,
@@ -262,6 +262,35 @@ exports.viewspicificorderitem = async (req, res) => {
     });
   }
 };
+
+// exports.viewspicificordercompleted = async (req, res) => {
+//   try {
+//     const { userId } = req.params;
+  
+
+//     if (!mongoose.Types.ObjectId.isValid(userId)) {
+//       return res.status(400).json({
+//         success: false,
+//         message: '⚠️ معرف المستخدم غير صالح',
+//       });
+//     }
+
+//     const orders = await Order.find({ userId: userId ,status:'تم التوصيل' });
+
+//     res.status(200).json({
+//       success: true,
+//       message: '✅ تم تحميل الطلبات بنجاح',
+//       orders,
+//     });
+//   } catch (error) {
+//     console.error('حدث خطأ أثناء جلب الطلبات:', error);
+//     res.status(500).json({
+//       success: false,
+//       message: '❌ فشل في تحميل الطلبات',
+//       error: error.message,
+//     });
+//   }
+// };
 exports.getOrdersForSeller = async (req, res) => {
   try {
     const sellerId = req.params.sellerId;
@@ -289,6 +318,130 @@ exports.getOrdersForSeller = async (req, res) => {
           {
             path: 'offer',
             match: { seller: sellerId },
+            select: 'status description imageUrl price',
+          },
+        ],
+      })
+      .populate('userId', 'name email')
+      .sort({ createdAt: -1 });
+
+    const fromCart = orders
+      .map((order) => {
+        const sellerParts = order.cartIds.filter((item) => item.partId);
+        if (sellerParts.length === 0) return null;
+
+        return {
+          orderId: order._id,
+          customer: {
+            _id: order.userId?._id,
+            name: order.userId?.name,
+            email: order.userId?.email,
+          },
+          status: order.status,
+          createdAt: order.createdAt,
+          source: 'cart',
+          items: sellerParts.map((item) => ({
+            partId: item.partId._id,
+            name: item.partId.name,
+            manufacturer: null,
+            model: null,
+            year: null,
+            price: item.partId.price,
+            quantity: item.quantity,
+            total: item.quantity * (item.partId.price || 0),
+            imageUrl: item.partId.imageUrl,
+            location: item.partId.location || '',
+            description: '',
+          })),
+          totalAmount: sellerParts.reduce(
+            (sum, item) => sum + item.quantity * (item.partId.price || 0),
+            0
+          ),
+        };
+      })
+      .filter(Boolean);
+
+    const fromSummary = ordersWithSummary
+      .map((order) => {
+        const matchedSummaries = order.summaryIds.filter(
+          (s) => s.offer && s.order
+        );
+
+        if (matchedSummaries.length === 0) return null;
+
+        return {
+          orderId: order._id,
+          customer: {
+            _id: order.userId?._id,
+            name: order.userId?.name,
+            email: order.userId?.email,
+          },
+          status: order.status,
+          createdAt: order.createdAt,
+          source: 'summary',
+          items: matchedSummaries.map((summary) => ({
+            partId: summary.order._id,
+            name: summary.order.name,
+            manufacturer: summary.order.manufacturer,
+            model: summary.order.model,
+            year: summary.order.year,
+            price: summary.offer.price,
+            quantity: 1,
+            total: summary.offer.price,
+            imageUrl: summary.offer.imageUrl || '',
+            location: '',
+            description: summary.offer.description || '',
+          })),
+          totalAmount: matchedSummaries.reduce(
+            (sum, s) => sum + (s.offer?.price || 0),
+            0
+          ),
+        };
+      })
+      .filter(Boolean);
+
+    const allOrders = [...fromCart, ...fromSummary].sort(
+      (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+    );
+
+    res.status(200).json({
+      success: true,
+      orders: allOrders,
+    });
+  } catch (error) {
+    console.error('❌ Error fetching seller orders:', error);
+    res.status(500).json({
+      success: false,
+      message: 'فشل في جلب الطلبات الخاصة بالبائع',
+      error: error.message,
+    });
+  }
+};
+exports.viewspicificordercompleted = async (req, res) => {
+  try {
+    const sellerId = req.params.userId;
+
+    const orders = await Order.find({userId:sellerId })
+      .populate({
+        path: 'cartIds',
+        populate: {
+          path: 'partId',
+          select: 'name price user imageUrl location',
+        },
+      })
+      .populate('userId', 'name email');
+
+    const ordersWithSummary = await Order.find({userId:sellerId})
+      .populate({
+        path: 'summaryIds',
+        populate: [
+          {
+            path: 'order',
+            select:
+              'name serialNumber manufacturer model year status imageUrl user',
+          },
+          {
+            path: 'offer',
             select: 'status description imageUrl price',
           },
         ],

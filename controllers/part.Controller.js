@@ -307,16 +307,14 @@ exports.CompatibleSpicificOrders = async (req, res) => {
 
    
 
-    // جهّز فلتر الشركات (براندات) إن وُجدت
     const hasPrands = Array.isArray(user.prands) && user.prands.length > 0;
     const manufacturerFilter = hasPrands ? { manufacturer: { $in: user.prands } } : {};
 
-    // اجلب الطلبات الخاصة المتوافقة مع براندات البائع
     const raw = await SpicificOrder.find(manufacturerFilter)
       .select('name serialNumber manufacturer model year status price imageUrl notes user')
       .populate({
         path: 'user',
-        match: targetRole ? { role: targetRole } : {}, // لو ما أرسلت role، لا تطبّق فلتر الدور
+        match: targetRole ? { role: targetRole } : {}, 
         select: 'role name',
       })
       .sort({ price: 1 })
