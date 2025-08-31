@@ -469,6 +469,7 @@ exports.addspicificorder = async (req, res) => {
       user,
       serialNumber,
       notes,
+      role
     } = req.body;
     //     const users=await User.findById(user);
 
@@ -485,7 +486,7 @@ exports.addspicificorder = async (req, res) => {
       imageUrl = result.secure_url; // Now this works because imageUrl is let
     }
 
-    const newPart = new spicificorder({
+    const newPart = new SpicificOrder({
       name,
       manufacturer,
       serialNumber,
@@ -495,6 +496,7 @@ exports.addspicificorder = async (req, res) => {
       user,
       imageUrl,
       notes,
+      role
     });
 
     await newPart.save();
