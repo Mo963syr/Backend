@@ -31,42 +31,51 @@ const spicificorderschema = new mongoose.Schema(
       required: [true, 'يجب إدخال سنة الصنع'],
     },
     status: {
-          type: String,
-      enum: ['بانتظار تأكيدك', 'قيد البحث','قيد المعالجة', 'ملغي', 'على الطريق','تم التوصيل' ,'مؤكد'],
+      type: String,
+      enum: [
+        'بانتظار تأكيدك',
+        'قيد البحث',
+        'قيد المعالجة',
+        'ملغي',
+        'على الطريق',
+        'تم التوصيل',
+        'مؤكد',
+      ],
       default: 'قيد البحث',
     },
     price: {
-  type: Number,
-  default: 0,
-},
+      type: Number,
+      default: 0,
+    },
     notes: {
       type: String,
       trim: true,
       maxlength: [500, 'الوصف لا يمكن أن يتجاوز 500 حرف'],
     },
-  imageUrls: [
-  {
-    type: String,
-    validate: {
-      validator: function (v) {
-        return /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/.test(v);
+    imageUrls: [
+      {
+        type: String,
+        validate: {
+          validator: function (v) {
+            return /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/.test(
+              v
+            );
+          },
+          message: (props) => `${props.value} ليس رابط صحيح للصورة!`,
+        },
       },
-      message: (props) => `${props.value} ليس رابط صحيح للصورة!`,
-    },
-  },
-],
+    ],
 
     user: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
       required: [true, 'يجب ربط القطعة بمعرف المستخدم'],
     },
-   role: {
-    type: String,
-    required: true,
-    enum: ['user', 'seller'],
-    default: 'user',
-  },
+    role: {
+      type: String,
+      required: true,
+      enum: ['user', 'seller'],
+    },
   },
   {
     timestamps: true,
