@@ -8,30 +8,41 @@ const mongoose = require('mongoose');
 exports.getPartRatings = async (req, res) => {
   try {
     const { partId } = req.params;
-    const page  = Math.max(parseInt(req.query.page || '1', 10), 1);
-    const limit = Math.min(Math.max(parseInt(req.query.limit || '10', 10), 1), 100);
-    const skip  = (page - 1) * limit;
+    const page = Math.max(parseInt(req.query.page || '1', 10), 1);
+    const limit = Math.min(
+      Math.max(parseInt(req.query.limit || '10', 10), 1),
+      100
+    );
+    const skip = (page - 1) * limit;
 
     if (!mongoose.Types.ObjectId.isValid(partId)) {
-      return res.status(400).json({ success: false, message: 'معرّف غير صالح' });
+      return res
+        .status(400)
+        .json({ success: false, message: 'معرّف غير صالح' });
     }
 
-    const partDoc = await part.findById(
-      partId,
-      { ratings: 1, avgRating: 1, ratingsCount: 1 }
-    )
-      .populate({ path: 'ratings.user', select: 'name email role', options: { lean: true } })
+    const partDoc = await part
+      .findById(partId, { ratings: 1, avgRating: 1, ratingsCount: 1 })
+      .populate({
+        path: 'ratings.user',
+        select: 'name email role',
+        options: { lean: true },
+      })
       .lean();
 
     if (!partDoc) {
-      return res.status(404).json({ success: false, message: 'القطعة غير موجودة' });
+      return res
+        .status(404)
+        .json({ success: false, message: 'القطعة غير موجودة' });
     }
 
     // حوّل أي قيمة إلى مصفوفة آمنة
     const raw = partDoc.ratings ?? [];
     const ratings = Array.isArray(raw)
       ? raw
-      : (raw && typeof raw === 'object' ? Object.values(raw) : []);
+      : raw && typeof raw === 'object'
+      ? Object.values(raw)
+      : [];
 
     // لو ما في تقييمات، رجّع صفر بدون أخطاء
     if (!ratings.length) {
@@ -41,7 +52,7 @@ exports.getPartRatings = async (req, res) => {
           partId,
           avgRating: Number(partDoc.avgRating || 0),
           ratingsCount: Number(partDoc.ratingsCount || 0),
-          breakdown: {1:0,2:0,3:0,4:0,5:0},
+          breakdown: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 },
           page,
           limit,
           items: [],
@@ -50,21 +61,21 @@ exports.getPartRatings = async (req, res) => {
     }
 
     // إحصائيات
-    const counts = { 1:0,2:0,3:0,4:0,5:0 };
+    const counts = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
     for (const r of ratings) {
       const v = Number(r?.rating ?? 0);
       if (v >= 1 && v <= 5) counts[v] += 1;
     }
     const total = ratings.length;
-    const sum   = ratings.reduce((a, r) => a + Number(r?.rating ?? 0), 0);
-    const avg   = Number((sum / total).toFixed(2));
+    const sum = ratings.reduce((a, r) => a + Number(r?.rating ?? 0), 0);
+    const avg = Number((sum / total).toFixed(2));
 
     // ترقيم صفحات + ترتيب زمني
     const items = ratings
       .slice()
       .sort((a, b) => new Date(b?.createdAt || 0) - new Date(a?.createdAt || 0))
       .slice(skip, skip + limit)
-      .map(r => ({
+      .map((r) => ({
         userId: r?.user?._id ?? r?.user ?? null,
         userName: r?.user?.name ?? 'مستخدم',
         rating: Number(r?.rating ?? 0),
@@ -88,7 +99,6 @@ exports.getPartRatings = async (req, res) => {
     return res.status(500).json({ success: false, message: 'خطأ في الخادم' });
   }
 };
-
 
 exports.ratePart = async (req, res) => {
   try {
@@ -284,73 +294,70 @@ exports.getCompatibleParts = async (req, res) => {
 };
 exports.CompatibleSpicificOrders = async (req, res) => {
   try {
-    const { userid } = req.params;
+    const { userid, role: targetRole } = req.params;
 
     if (!mongoose.Types.ObjectId.isValid(userid)) {
-      return res.status(400).json({
-        success: false,
-        message: 'معرف المستخدم غير صالح',
-      });
+      return res.status(400).json({ success: false, message: 'معرف المستخدم غير صالح' });
     }
 
     const user = await User.findById(userid).select('prands role');
-
-    // if (!user || !user.cars || user.cars.length === 0) {
-    //   const part = await part.find();
-    //   return res.status(200).json({
-    //     success: true,
-    //     parts: part,
-    //     message: 'تم ارجاع كل السيارات',
-    //   });
-    // }
-    console.log(user.role);
-    console.log(user);
-    if (user.role !== 'seller') {
-      return res.status(403).json({
-        success: false,
-        message: 'المستخدم ليس بائع',
-      });
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'المستخدم غير موجود' });
     }
 
-    const compatibleParts = await SpicificOrder
-      .find({
-        $or: user.prands.map((prand) => ({
-          manufacturer: prand,
-        })),
-      })
-      .select(
-        'name serialNumber manufacturer model year status price imageUrl notes '
-      )
-      .sort({ price: 1 });
+   
 
-    res.status(200).json({
+    // جهّز فلتر الشركات (براندات) إن وُجدت
+    const hasPrands = Array.isArray(user.prands) && user.prands.length > 0;
+    const manufacturerFilter = hasPrands ? { manufacturer: { $in: user.prands } } : {};
+
+    // اجلب الطلبات الخاصة المتوافقة مع براندات البائع
+    const raw = await SpicificOrder.find(manufacturerFilter)
+      .select('name serialNumber manufacturer model year status price imageUrl notes user')
+      .populate({
+        path: 'user',
+        match: targetRole ? { role: targetRole } : {}, // لو ما أرسلت role، لا تطبّق فلتر الدور
+        select: 'role name',
+      })
+      .sort({ price: 1 })
+      .lean();
+
+    // صفّي الذي لم يطابق الدور (user=null بعد populate)
+    const compatibleParts = raw.filter(o => !!o.user);
+
+    return res.status(200).json({
       success: true,
-      userprands: user.prands,
-      compatibleParts: compatibleParts.map((prand) => ({
-        id: prand._id,
-        name: prand.name,
-        serialNumber: prand.serialNumber,
-        manufacturer: prand.manufacturer,
-        model: prand.model,
-        year: prand.year,
-        notes: prand.notes,
-        status: prand.status,
-        price: prand.price,
-        imageUrl: prand.imageUrl || '/default-part-image.jpg',
+      userprands: user.prands ?? [],
+      compatibleParts: compatibleParts.map(order => ({
+        id: order._id,
+        name: order.name,
+        serialNumber: order.serialNumber,
+        manufacturer: order.manufacturer,
+        model: order.model,
+        year: order.year,
+        notes: order.notes,
+        status: order.status,
+        price: order.price,
+        // دور صاحب الطلب (الذي أرسل الطلب)
+        requesterRole: order.user?.role,
+        imageUrl: order.imageUrl || '/default-part-image.jpg',
       })),
       meta: {
         totalorders: compatibleParts.length,
+        filteredByRole: !!targetRole,
+        filteredByPrands: hasPrands,
       },
     });
   } catch (error) {
-    console.error('حدث خطأ في جلب القطع المتوافقة:', error);
-    res.status(500).json({
+    console.error('حدث خطأ في جلب الطلبات المتوافقة:', error);
+    return res.status(500).json({
       success: false,
       message: 'حدث خطأ في الخادم',
       error: process.env.NODE_ENV === 'development' ? error.message : undefined,
     });
   }
 };
+
 exports.viewPrivateParts = async (req, res) => {
   try {
     const { userid, category } = req.body;
@@ -469,7 +476,7 @@ exports.addspicificorder = async (req, res) => {
       user,
       serialNumber,
       notes,
-      role
+      role,
     } = req.body;
     //     const users=await User.findById(user);
 
@@ -496,7 +503,7 @@ exports.addspicificorder = async (req, res) => {
       user,
       imageUrl,
       notes,
-      role
+      role,
     });
 
     await newPart.save();

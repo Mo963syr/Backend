@@ -10,7 +10,6 @@ exports.getUserBrandOrders = async (req, res) => {
   try {
     const { userId } = req.params;
 
-   
     const user = await User.findById(userId).select('prands name phoneNumber');
     if (!user) return res.status(404).json({ message: 'المستخدم غير موجود' });
 
@@ -44,7 +43,6 @@ exports.addOrder = async (req, res) => {
       });
     }
 
-
     const existingOrder = await Order.find({
       userId,
       status: { $ne: 'تم التوصيل' },
@@ -56,7 +54,6 @@ exports.addOrder = async (req, res) => {
       });
     }
 
-  
     if (
       !coordinates ||
       !Array.isArray(coordinates) ||
@@ -67,7 +64,6 @@ exports.addOrder = async (req, res) => {
         message: '⚠️ الموقع الجغرافي غير صالح (يتطلب [lng, lat])',
       });
     }
-
 
     const userCartItems = await Cart.find({ userId, status: 'قيد المعالجة' });
 
@@ -80,39 +76,36 @@ exports.addOrder = async (req, res) => {
       })
       .sort({ createdAt: -1 });
 
- 
-    if (userCartItems.length === 0 && userspiciorder.length==0) {
+    if (userCartItems.length === 0 && userspiciorder.length == 0) {
       return res.status(404).json({
         success: false,
         message: '🚫 لا توجد منتجات في السلة لهذا المستخدم',
       });
     }
 
-
-    const filteredSummaries = userspiciorder.filter(
-      (s) => s.order !== null
-    );
+    const filteredSummaries = userspiciorder.filter((s) => s.order !== null);
 
     const cartIds = userCartItems.map((item) => item._id);
     const summaryIds = filteredSummaries.map((item) => item._id);
 
-   
     const userDoc = await User.findById(userId).select('province provinceNorm');
     const orderProvince = (userDoc?.province || '').toString();
-    const orderProvinceNorm = (userDoc?.provinceNorm || orderProvince).toString().trim().toLowerCase();
+    const orderProvinceNorm = (userDoc?.provinceNorm || orderProvince)
+      .toString()
+      .trim()
+      .toLowerCase();
 
     const newOrder = new Order({
       userId,
       cartIds,
       summaryIds,
       location: { type: 'Point', coordinates },
-   
+
       delivery: {
         province: orderProvince,
         provinceNorm: orderProvinceNorm,
       },
     });
-
 
     await newOrder.save();
 
@@ -202,7 +195,7 @@ exports.vieworderitem = async (req, res) => {
             user: summary.order.user,
             price: summary.offer.price,
           },
-         
+
           quantity: 1,
           status: summary.order.status,
           seller: summary.offer.seller,
@@ -244,6 +237,7 @@ exports.vieworderitem = async (req, res) => {
 exports.viewspicificorderitem = async (req, res) => {
   try {
     const { userId } = req.params;
+  
 
     if (!mongoose.Types.ObjectId.isValid(userId)) {
       return res.status(400).json({
@@ -272,7 +266,6 @@ exports.getOrdersForSeller = async (req, res) => {
   try {
     const sellerId = req.params.sellerId;
 
-  
     const orders = await Order.find()
       .populate({
         path: 'cartIds',
@@ -284,14 +277,14 @@ exports.getOrdersForSeller = async (req, res) => {
       })
       .populate('userId', 'name email');
 
-
     const ordersWithSummary = await Order.find()
       .populate({
         path: 'summaryIds',
         populate: [
           {
             path: 'order',
-            select: 'name serialNumber manufacturer model year status imageUrl user',
+            select:
+              'name serialNumber manufacturer model year status imageUrl user',
           },
           {
             path: 'offer',
@@ -303,78 +296,80 @@ exports.getOrdersForSeller = async (req, res) => {
       .populate('userId', 'name email')
       .sort({ createdAt: -1 });
 
- 
-    const fromCart = orders.map((order) => {
-      const sellerParts = order.cartIds.filter((item) => item.partId);
-      if (sellerParts.length === 0) return null;
+    const fromCart = orders
+      .map((order) => {
+        const sellerParts = order.cartIds.filter((item) => item.partId);
+        if (sellerParts.length === 0) return null;
 
-      return {
-        orderId: order._id,
-        customer: {
-          _id: order.userId?._id,
-          name: order.userId?.name,
-          email: order.userId?.email,
-        },
-        status: order.status,
-        createdAt: order.createdAt,
-        source: 'cart',
-        items: sellerParts.map((item) => ({
-          partId: item.partId._id,
-          name: item.partId.name,
-          manufacturer: null,
-          model: null,
-          year: null,
-          price: item.partId.price,
-          quantity: item.quantity,
-          total: item.quantity * (item.partId.price || 0),
-          imageUrl: item.partId.imageUrl,
-          location: item.partId.location || '',
-          description: '',
-        })),
-        totalAmount: sellerParts.reduce(
-          (sum, item) => sum + item.quantity * (item.partId.price || 0),
-          0
-        ),
-      };
-    }).filter(Boolean);
+        return {
+          orderId: order._id,
+          customer: {
+            _id: order.userId?._id,
+            name: order.userId?.name,
+            email: order.userId?.email,
+          },
+          status: order.status,
+          createdAt: order.createdAt,
+          source: 'cart',
+          items: sellerParts.map((item) => ({
+            partId: item.partId._id,
+            name: item.partId.name,
+            manufacturer: null,
+            model: null,
+            year: null,
+            price: item.partId.price,
+            quantity: item.quantity,
+            total: item.quantity * (item.partId.price || 0),
+            imageUrl: item.partId.imageUrl,
+            location: item.partId.location || '',
+            description: '',
+          })),
+          totalAmount: sellerParts.reduce(
+            (sum, item) => sum + item.quantity * (item.partId.price || 0),
+            0
+          ),
+        };
+      })
+      .filter(Boolean);
 
-    const fromSummary = ordersWithSummary.map((order) => {
-      const matchedSummaries = order.summaryIds.filter(
-        (s) => s.offer && s.order
-      );
+    const fromSummary = ordersWithSummary
+      .map((order) => {
+        const matchedSummaries = order.summaryIds.filter(
+          (s) => s.offer && s.order
+        );
 
-      if (matchedSummaries.length === 0) return null;
+        if (matchedSummaries.length === 0) return null;
 
-      return {
-        orderId: order._id,
-        customer: {
-          _id: order.userId?._id,
-          name: order.userId?.name,
-          email: order.userId?.email,
-        },
-        status: order.status,
-        createdAt: order.createdAt,
-        source: 'summary',
-        items: matchedSummaries.map((summary) => ({
-          partId: summary.order._id,
-          name: summary.order.name,
-          manufacturer: summary.order.manufacturer,
-          model: summary.order.model,
-          year: summary.order.year,
-          price: summary.offer.price,
-          quantity: 1,
-          total: summary.offer.price,
-          imageUrl: summary.offer.imageUrl || '',
-          location: '',
-          description: summary.offer.description || '',
-        })),
-        totalAmount: matchedSummaries.reduce(
-          (sum, s) => sum + (s.offer?.price || 0),
-          0
-        ),
-      };
-    }).filter(Boolean);
-
+        return {
+          orderId: order._id,
+          customer: {
+            _id: order.userId?._id,
+            name: order.userId?.name,
+            email: order.userId?.email,
+          },
+          status: order.status,
+          createdAt: order.createdAt,
+          source: 'summary',
+          items: matchedSummaries.map((summary) => ({
+            partId: summary.order._id,
+            name: summary.order.name,
+            manufacturer: summary.order.manufacturer,
+            model: summary.order.model,
+            year: summary.order.year,
+            price: summary.offer.price,
+            quantity: 1,
+            total: summary.offer.price,
+            imageUrl: summary.offer.imageUrl || '',
+            location: '',
+            description: summary.offer.description || '',
+          })),
+          totalAmount: matchedSummaries.reduce(
+            (sum, s) => sum + (s.offer?.price || 0),
+            0
+          ),
+        };
+      })
+      .filter(Boolean);
 
     const allOrders = [...fromCart, ...fromSummary].sort(
       (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
@@ -393,7 +388,6 @@ exports.getOrdersForSeller = async (req, res) => {
     });
   }
 };
-
 
 exports.updateOrderStatus = async (req, res) => {
   try {

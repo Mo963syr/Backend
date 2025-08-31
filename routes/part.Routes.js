@@ -18,7 +18,7 @@ router.post('/add', upload.single('image'), addPart);
 router.post('/ratePart/:partId', ratePart);
 router.get('/getPartRatings/:partId', getPartRatings);
 router.get('/viewPrivateParts/:userid', getCompatibleParts);
-router.get('/CompatibleSpicificOrders/:userid', CompatibleSpicificOrders);
+router.get('/CompatibleSpicificOrders/:userid/:role', CompatibleSpicificOrders);
 router.get('/viewAllParts', viewAllParts);
 router.get('/viewsellerParts/:userId', viewsellerParts);
 
