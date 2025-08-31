@@ -71,11 +71,7 @@ const spicificorderschema = new mongoose.Schema(
       ref: 'User',
       required: [true, 'يجب ربط القطعة بمعرف المستخدم'],
     },
-    role: {
-      type: String,
-      required: true,
-      enum: ['user', 'seller'],
-    },
+  
   },
   {
     timestamps: true,
