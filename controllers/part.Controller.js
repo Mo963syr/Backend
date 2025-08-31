@@ -312,7 +312,7 @@ exports.CompatibleSpicificOrders = async (req, res) => {
       });
     }
 
-    const compatibleParts = await spicificorder
+    const compatibleParts = await SpicificOrder
       .find({
         $or: user.prands.map((prand) => ({
           manufacturer: prand,
