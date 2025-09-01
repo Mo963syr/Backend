@@ -297,36 +297,42 @@ exports.CompatibleSpicificOrders = async (req, res) => {
     const { userid, role: targetRole } = req.params;
 
     if (!mongoose.Types.ObjectId.isValid(userid)) {
-      return res.status(400).json({ success: false, message: 'معرف المستخدم غير صالح' });
+      return res
+        .status(400)
+        .json({ success: false, message: 'معرف المستخدم غير صالح' });
     }
 
     const user = await User.findById(userid).select('prands role');
     if (!user) {
-      return res.status(404).json({ success: false, message: 'المستخدم غير موجود' });
+      return res
+        .status(404)
+        .json({ success: false, message: 'المستخدم غير موجود' });
     }
 
-   
-
     const hasPrands = Array.isArray(user.prands) && user.prands.length > 0;
-    const manufacturerFilter = hasPrands ? { manufacturer: { $in: user.prands } } : {};
+    const manufacturerFilter = hasPrands
+      ? { manufacturer: { $in: user.prands } }
+      : {};
 
     const raw = await SpicificOrder.find(manufacturerFilter)
-      .select('name serialNumber manufacturer model year status price imageUrl notes user')
+      .select(
+        'name serialNumber manufacturer model year status price imageUrl notes user'
+      )
       .populate({
         path: 'user',
-        match: targetRole ? { role: targetRole } : {}, 
+        match: targetRole ? { role: targetRole } : {},
         select: 'role name',
       })
       .sort({ price: 1 })
       .lean();
 
     // صفّي الذي لم يطابق الدور (user=null بعد populate)
-    const compatibleParts = raw.filter(o => !!o.user);
+    const compatibleParts = raw.filter((o) => !!o.user);
 
     return res.status(200).json({
       success: true,
       userprands: user.prands ?? [],
-      compatibleParts: compatibleParts.map(order => ({
+      compatibleParts: compatibleParts.map((order) => ({
         id: order._id,
         name: order.name,
         serialNumber: order.serialNumber,
@@ -464,15 +470,8 @@ exports.addPart = async (req, res) => {
 };
 exports.addspicificorder = async (req, res) => {
   try {
-    const {
-      name,
-      manufacturer,
-      model,
-      year,
-      serialNumber,
-      notes,
-      user, 
-    } = req.body;
+    const { name, manufacturer, model, year, serialNumber, notes, user } =
+      req.body;
 
     if (!mongoose.Types.ObjectId.isValid(user)) {
       return res.status(400).json({
@@ -503,7 +502,7 @@ exports.addspicificorder = async (req, res) => {
       year,
       serialNumber,
       notes,
-  // ممكن تستغني عنه وتستخدم user.role بدلًا منه
+      // ممكن تستغني عنه وتستخدم user.role بدلًا منه
       user,
       imageUrls: imageUrl ? [imageUrl] : [],
     });
@@ -520,4 +519,3 @@ exports.addspicificorder = async (req, res) => {
     res.status(500).json({ success: false, error: '❌ فشل في إضافة الطلب' });
   }
 };
-

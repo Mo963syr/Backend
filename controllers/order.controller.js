@@ -5,6 +5,58 @@ const Order = require('../models/order.model');
 const User = require('../models/user.Model');
 const SpicificOrder = require('../models/spicificPartOrder.model');
 const OrderSummary = require('../models/orderSummary.model');
+// getOrdersWithAverageRatings
+exports.getOrdersWithAverageRatings = async (req, res) => {
+  try {
+    const orders = await Order.find().populate({
+      path: 'cartIds',
+      populate: {
+        path: 'partId',
+        select: '_id ratings',
+      },
+    });
+
+    const seen = new Set();
+    const results = [];
+
+    orders.forEach((order) => {
+      order.cartIds.forEach((cart) => {
+        const partId = cart.partId?._id?.toString();
+
+        if (partId) {
+          if (cart.partId?.ratings && cart.partId.ratings.length > 0) {
+            cart.partId.ratings.forEach((r) => {
+              const key = `${r.user}-${partId}-${r.rating}`;
+              if (!seen.has(key)) {
+                seen.add(key);
+                results.push({
+                  user_id: r.user.toString(),
+                  item_id: partId,
+                  rating: r.rating,
+                });
+              }
+            });
+          } else {
+            const key = `null-${partId}-null`;
+            if (!seen.has(key)) {
+              seen.add(key);
+              results.push({
+                user_id: null,
+                item_id: partId,
+                rating: null,
+              });
+            }
+          }
+        }
+      });
+    });
+
+    res.status(200).json(results);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'خطأ في جلب البيانات' });
+  }
+};
 
 exports.getUserBrandOrders = async (req, res) => {
   try {
@@ -237,7 +289,6 @@ exports.vieworderitem = async (req, res) => {
 exports.viewspicificorderitem = async (req, res) => {
   try {
     const { userId } = req.params;
-  
 
     if (!mongoose.Types.ObjectId.isValid(userId)) {
       return res.status(400).json({
@@ -246,7 +297,7 @@ exports.viewspicificorderitem = async (req, res) => {
       });
     }
 
-    const orders = await SpicificOrder.find({ user: userId  });
+    const orders = await SpicificOrder.find({ user: userId });
 
     res.status(200).json({
       success: true,
@@ -266,7 +317,6 @@ exports.viewspicificorderitem = async (req, res) => {
 // exports.viewspicificordercompleted = async (req, res) => {
 //   try {
 //     const { userId } = req.params;
-  
 
 //     if (!mongoose.Types.ObjectId.isValid(userId)) {
 //       return res.status(400).json({
@@ -421,7 +471,7 @@ exports.viewspicificordercompleted = async (req, res) => {
   try {
     const sellerId = req.params.userId;
 
-    const orders = await Order.find({userId:sellerId })
+    const orders = await Order.find({ userId: sellerId })
       .populate({
         path: 'cartIds',
         populate: {
@@ -431,7 +481,7 @@ exports.viewspicificordercompleted = async (req, res) => {
       })
       .populate('userId', 'name email');
 
-    const ordersWithSummary = await Order.find({userId:sellerId})
+    const ordersWithSummary = await Order.find({ userId: sellerId })
       .populate({
         path: 'summaryIds',
         populate: [
