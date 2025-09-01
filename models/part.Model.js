@@ -32,7 +32,15 @@ const partSchema = new mongoose.Schema(
     },
     category: {
       type: String,
-      enum: ['محرك', 'هيكل', 'فرامل', 'كهرباء', 'إطارات', 'نظام التعليق'],
+      enum: [
+        'محرك',
+        'هيكل',
+        'فرامل',
+        'كهرباء',
+        'إطارات',
+        'نظام التعليق',
+        'تبريد',
+      ],
       required: [true, 'يجب اختيار تصنيف القطعة'],
     },
     status: {
@@ -53,15 +61,16 @@ const partSchema = new mongoose.Schema(
     },
     imageUrl: {
       type: String,
+      required: false, // ✅ مو مطلوب إجباري
       validate: {
         validator: function (v) {
-          return /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/.test(
-            v
-          );
+          // يقبل null أو فاضي أو رابط صحيح
+          return !v || /^(https?:\/\/.+)$/.test(v);
         },
         message: (props) => `${props.value} ليس رابط صحيح للصورة!`,
       },
     },
+
     user: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
@@ -84,23 +93,21 @@ const partSchema = new mongoose.Schema(
         ref: 'Comment',
       },
     ],
-  ratings: [
-  {
-    user: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
-      required: true,
-    },
-    rating: {
-      type: Number,
-      min: 1,
-      max: 5,
-      required: true,
-    },
-  }
-],
-
-
+    ratings: [
+      {
+        user: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: 'User',
+          required: true,
+        },
+        rating: {
+          type: Number,
+          min: 1,
+          max: 5,
+          required: true,
+        },
+      },
+    ],
   },
   {
     timestamps: true,
@@ -115,7 +122,6 @@ partSchema.index({ category: 1 });
 partSchema.index({ status: 1 });
 partSchema.index({ price: 1 });
 partSchema.index({ user: 1 });
-
 
 partSchema.virtual('age').get(function () {
   return new Date().getFullYear() - this.year;

@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const upload = require('../middleware/upload');
+const multer = require('multer');
 const {
   deletePart,
   CompatibleSpicificOrders,
@@ -11,12 +11,26 @@ const {
   viewsellerParts,
   ratePart,
   getPartRatings,
+  addPartsFromExcel
 } = require('../controllers/part.Controller');
+
+
+const upload = multer({ dest: 'uploads/' });
+
+
+router.post('/upload-excel', upload.single('file'), addPartsFromExcel);
+
+
 router.delete('/delete/:id', deletePart);
 router.put('/update/:id', updatePart);
+
+
 router.post('/add', upload.single('image'), addPart);
+
+
 router.post('/ratePart/:partId', ratePart);
 router.get('/getPartRatings/:partId', getPartRatings);
+
 router.get('/viewPrivateParts/:userid', getCompatibleParts);
 router.get('/CompatibleSpicificOrders/:userid/:role', CompatibleSpicificOrders);
 router.get('/viewAllParts', viewAllParts);

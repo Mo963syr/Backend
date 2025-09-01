@@ -4,6 +4,59 @@ const User = require('../models/user.Model');
 const Order = require('../models/order.model');
 const cloudinary = require('../utils/cloudinary');
 const mongoose = require('mongoose');
+const XLSX = require('xlsx');
+const fs = require('fs');
+const path = require('path');
+
+exports.addPartsFromExcel = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: '⚠️ لم يتم رفع أي ملف' });
+    }
+
+    const { user } = req.body;
+    if (!user) {
+      return res.status(400).json({ message: "⚠️ يجب إرسال معرف المستخدم مع الطلب" });
+    }
+
+    // قراءة ملف الإكسل
+    const workbook = XLSX.readFile(req.file.path);
+    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+    const rows = XLSX.utils.sheet_to_json(sheet);
+
+    const insertedParts = [];
+
+    for (const row of rows) {
+      const newPart = new part({
+        name: row.name,
+        manufacturer: row.manufacturer ? row.manufacturer.toLowerCase() : null, // ✅ صانع السيارة lowercase
+        model: row.model ? row.model.toLowerCase() : null, // 👈 إذا بدك كمان الموديل lowercase
+        year: row.year,
+        category: row.category,
+        status: row.status,
+        user: user, // ✅ من جسم الطلب
+        price: row.price,
+        serialNumber: row.serialNumber,
+        description: row.description,
+        imageUrl: null, // ما في صور
+      });
+
+      await newPart.save();
+      insertedParts.push(newPart);
+    }
+
+    // حذف الملف المؤقت
+    fs.unlinkSync(req.file.path);
+
+    res.status(201).json({
+      message: `✅ تم إضافة ${insertedParts.length} قطعة`,
+      parts: insertedParts,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: '❌ فشل في إضافة القطع' });
+  }
+};
 
 exports.getPartRatings = async (req, res) => {
   try {
