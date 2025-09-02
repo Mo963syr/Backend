@@ -7,6 +7,7 @@ const mongoose = require('mongoose');
 const XLSX = require('xlsx');
 const fs = require('fs');
 const path = require('path');
+const { count } = require('console');
 
 exports.addPartsFromExcel = async (req, res) => {
   try {
@@ -16,7 +17,9 @@ exports.addPartsFromExcel = async (req, res) => {
 
     const { user } = req.body;
     if (!user) {
-      return res.status(400).json({ message: "⚠️ يجب إرسال معرف المستخدم مع الطلب" });
+      return res
+        .status(400)
+        .json({ message: '⚠️ يجب إرسال معرف المستخدم مع الطلب' });
     }
 
     // قراءة ملف الإكسل
@@ -30,12 +33,13 @@ exports.addPartsFromExcel = async (req, res) => {
       const newPart = new part({
         name: row.name,
         manufacturer: row.manufacturer ? row.manufacturer.toLowerCase() : null, // ✅ صانع السيارة lowercase
-        model: row.model ? row.model.toLowerCase() : null, // 👈 إذا بدك كمان الموديل lowercase
+        model: row.model ? row.model.toLowerCase() : null,
         year: row.year,
         category: row.category,
         status: row.status,
         user: user, // ✅ من جسم الطلب
         price: row.price,
+        count: row.count,
         serialNumber: row.serialNumber,
         description: row.description,
         imageUrl: null, // ما في صور
@@ -329,6 +333,7 @@ exports.getCompatibleParts = async (req, res) => {
         year: part.year,
         category: part.category,
         status: part.status,
+        count: part.count,
         price: part.price,
         imageUrl: part.imageUrl || '/default-part-image.jpg',
       })),
@@ -391,13 +396,14 @@ exports.CompatibleSpicificOrders = async (req, res) => {
         serialNumber: order.serialNumber,
         manufacturer: order.manufacturer,
         model: order.model,
+        count: order.count,
         year: order.year,
         notes: order.notes,
         status: order.status,
         price: order.price,
-        // دور صاحب الطلب (الذي أرسل الطلب)
+
         requesterRole: order.user?.role,
-        imageUrl: order.imageUrl || '/default-part-image.jpg',
+        imageUrl: order.imageUrls || '/default-part-image.jpg',
       })),
       meta: {
         totalorders: compatibleParts.length,
@@ -477,6 +483,7 @@ exports.addPart = async (req, res) => {
       category,
       status,
       user,
+      count,
       price,
       serialNumber,
       description,
@@ -502,6 +509,7 @@ exports.addPart = async (req, res) => {
       serialNumber,
       model,
       year,
+      count,
       category,
       status,
       user,
@@ -523,7 +531,7 @@ exports.addPart = async (req, res) => {
 };
 exports.addspicificorder = async (req, res) => {
   try {
-    const { name, manufacturer, model, year, serialNumber, notes, user } =
+    const { name, manufacturer, model, year, serialNumber, notes, user ,count} =
       req.body;
 
     if (!mongoose.Types.ObjectId.isValid(user)) {
@@ -555,7 +563,7 @@ exports.addspicificorder = async (req, res) => {
       year,
       serialNumber,
       notes,
-      // ممكن تستغني عنه وتستخدم user.role بدلًا منه
+      count,
       user,
       imageUrls: imageUrl ? [imageUrl] : [],
     });

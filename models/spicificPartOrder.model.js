@@ -47,6 +47,11 @@ const spicificorderschema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+       count: {
+      type: Number,
+      default:'1',
+ 
+    },
     notes: {
       type: String,
       trim: true,

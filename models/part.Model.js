@@ -21,6 +21,10 @@ const partSchema = new mongoose.Schema(
       trim: true,
       maxlength: [50, 'اسم الطراز لا يمكن أن يتجاوز 50 حرف'],
     },
+    count: {
+      type: Number,
+      required: [true, 'يجب إدخال عدد القطع '],
+    },
     year: {
       type: Number,
       min: [2000, 'سنة الصنع يجب أن تكون 2000 أو أحدث'],
