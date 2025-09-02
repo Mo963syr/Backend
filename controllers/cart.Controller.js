@@ -51,11 +51,12 @@ exports.getCartItemsForSeller = async (req, res) => {
 
 exports.addPart = async (req, res) => {
   try {
-    const { partId, userId } = req.body;
+    const { partId, userId ,quantity} = req.body;
 
     const cartData = {
       partId,
       userId,
+      quantity
     };
 
     const addCart = new cart(cartData);
