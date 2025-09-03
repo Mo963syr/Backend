@@ -179,13 +179,13 @@ exports.acceptDeliveryOrder = async (req, res) => {
       return res
         .status(404)
         .json({ success: false, message: 'الطلب غير موجود' });
-    if (order.status !== STATUS.CONFIRMED) {
+    if (order.status !== STATUS.accepted) {
       return res
         .status(409)
         .json({ success: false, message: 'لا يمكن قبول طلب غير مؤكد' });
     }
 
-    order.status = STATUS.RECEIVED; // ✅ مستلمة
+    order.status = STATUS.RECEIVED; 
     order.delivery = {
       ...(order.delivery || {}),
       driverId,
