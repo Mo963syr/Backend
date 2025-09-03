@@ -603,6 +603,7 @@ exports.updateOrderStatus = async (req, res) => {
       'ملغي',
       'على الطريق',
       'تم التوصيل',
+      'موافق عليها',
     ];
     if (!allowedStatuses.includes(status)) {
       return res
