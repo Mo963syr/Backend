@@ -65,13 +65,8 @@ exports.listDeliveryOrders = async (req, res) => {
             {
               path: 'partId',
               select: 'name manufacturer model price',
-              populate: [
-                { path: 'user', select: 'name phoneNumber' },
-           
-              ],
+              populate: [{ path: 'user', select: 'name phoneNumber' }],
             },
-
-          
           ],
         },
         {
@@ -99,19 +94,17 @@ exports.listDeliveryOrders = async (req, res) => {
       const partmanufacturer1 =
         o?.summaryIds?.[0]?.order?.manufacturer ?? 'قطعة غير معروفة';
 
-        const price =
-        o?.cartIds?.[0]?.partId?.price ?? 'قطعة غير معروفة';
-        const price1 =
-       o?.summaryIds?.[0]?.order?.price ?? 'قطعة غير معروفة';
+      const price = o?.cartIds?.[0]?.partId?.price ?? 'قطعة غير معروفة';
+      const price1 = o?.summaryIds?.[0]?.order?.price ?? 'قطعة غير معروفة';
       const part = {
         name: partName,
         manufacturer: partmanufacturer ?? '',
-        price:price?? '',
+        price: price ?? '',
       };
       const part1 = {
         name: partName1,
         manufacturer: partmanufacturer1 ?? '',
-        price:price1?? '',
+        price: price1 ?? '',
       };
 
       const c = o.userId || {};
@@ -120,13 +113,10 @@ exports.listDeliveryOrders = async (req, res) => {
         phoneNumber: c.phoneNumber ?? c.phone ?? '',
       };
 
-    
       const sellerFromSummary = o?.summaryIds?.[0]?.offer?.seller || null;
       const sellerFrom = o?.cartIds?.[0]?.partId?.user || null;
       const sellerFromCart =
-        o?.cartIds?.[0]?.sellerId || 
-        o?.cartIds?.[0]?.partId?.seller || 
-        null;
+        o?.cartIds?.[0]?.sellerId || o?.cartIds?.[0]?.partId?.seller || null;
 
       const s = sellerFromSummary ?? sellerFromCart ?? {};
       const s1 = sellerFrom ?? sellerFromCart ?? {};
@@ -139,8 +129,9 @@ exports.listDeliveryOrders = async (req, res) => {
         _id: o._id,
         orderId: o.orderId,
         status: o.status,
-       location: o.location?.coordinates ?? [],
-        part ,part1,
+        location: o.location?.coordinates ?? [],
+        part,
+        part1,
         customer,
         seller,
         delivery: o.delivery,
@@ -148,13 +139,12 @@ exports.listDeliveryOrders = async (req, res) => {
       };
     });
 
-    return res.json({ success: true, orders: shaped  });
+    return res.json({ success: true, orders: shaped });
   } catch (e) {
     console.error(e);
     return res.status(500).json({ success: false, message: 'خطأ في الخادم' });
   }
 };
-
 
 exports.acceptDeliveryOrder = async (req, res) => {
   try {
@@ -190,7 +180,6 @@ exports.acceptDeliveryOrder = async (req, res) => {
       driverId,
       fee,
       acceptedAt: new Date(),
-    
     };
 
     await order.save();
