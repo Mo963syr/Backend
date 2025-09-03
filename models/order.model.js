@@ -40,12 +40,24 @@ const orderSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ['قيد التجهيز', 'مؤكد', 'مستلمة', 'على الطريق', 'تم التوصيل', 'ملغي'],
+      enum: [
+        'قيد التجهيز',
+        'مؤكد',
+        'مستلمة',
+        'على الطريق',
+        'تم التوصيل',
+        'ملغي',
+        'موافق عليها',
+      ],
       default: 'مؤكد',
     },
-  
+
     delivery: {
-      driverId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+      driverId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        default: null,
+      },
       fee: { type: Number, default: null },
       acceptedAt: { type: Date },
       startedAt: { type: Date },
@@ -57,7 +69,6 @@ const orderSchema = new mongoose.Schema(
       province: { type: String, default: '' },
       provinceNorm: { type: String, default: '' },
     },
-
   },
   { timestamps: true }
 );
