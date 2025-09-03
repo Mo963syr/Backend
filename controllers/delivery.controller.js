@@ -6,15 +6,15 @@ const normalizeProvince = (s) => (s ?? '').toString().trim().toLowerCase();
 
 const STATUS = {
   CONFIRMED: 'مؤكد',
+  accepted: 'موافق عليها',
   RECEIVED: 'مستلمة',
   ON_ROAD: 'على الطريق',
   DELIVERED: 'تم التوصيل',
   CANCELED: 'ملغي',
 };
-
 exports.listDeliveryOrders = async (req, res) => {
   try {
-    const { status = STATUS.CONFIRMED, driverId } = req.query;
+    const { status, driverId } = req.query;
     if (!driverId)
       return res
         .status(400)
@@ -43,17 +43,27 @@ exports.listDeliveryOrders = async (req, res) => {
         .json({ success: false, message: 'محافظة المندوب غير محددة' });
     }
 
-    const match =
-      status === STATUS.CONFIRMED
-        ? {
-            status: STATUS.CONFIRMED,
-            $or: [
-              { 'delivery.driverId': null },
-              { 'delivery.driverId': { $exists: false } },
-            ],
-          }
-        : { status, 'delivery.driverId': driver._id };
-    match['delivery.provinceNorm'] = driverProvNorm;
+    const allowedStatuses = [
+      STATUS.accepted,   
+      STATUS.RECEIVED,   
+      STATUS.ON_ROAD,    
+      STATUS.DELIVERED,  
+      STATUS.CANCELED,  
+    ];
+
+    if (!allowedStatuses.includes(status)) {
+      return res.json({ success: true, orders: [] });
+    }
+
+    let match = {
+      status,
+      'delivery.provinceNorm': driverProvNorm,
+    };
+
+  
+    if (![STATUS.RECEIVED, STATUS.accepted].includes(status)) {
+      match['delivery.driverId'] = driver._id;
+    }
 
     const orders = await Order.find(match)
       .sort({ createdAt: -1 })
@@ -87,15 +97,14 @@ exports.listDeliveryOrders = async (req, res) => {
       const partName = o?.cartIds?.[0]?.partId?.name ?? 'قطعة غير معروفة';
       const partName1 = o?.summaryIds?.[0]?.order?.name ?? 'قطعة غير معروفة';
 
-      const partspici = o?.summaryIds?.[0]?.order?.name ?? 'قطعة غير معروفة';
-
       const partmanufacturer =
         o?.cartIds?.[0]?.partId?.manufacturer ?? 'قطعة غير معروفة';
       const partmanufacturer1 =
         o?.summaryIds?.[0]?.order?.manufacturer ?? 'قطعة غير معروفة';
 
-      const price = o?.cartIds?.[0]?.partId?.price ?? 'قطعة غير معروفة';
-      const price1 = o?.summaryIds?.[0]?.order?.price ?? 'قطعة غير معروفة';
+      const price = o?.cartIds?.[0]?.partId?.price ?? 'غير معروف';
+      const price1 = o?.summaryIds?.[0]?.order?.price ?? 'غير معروف';
+
       const part = {
         name: partName,
         manufacturer: partmanufacturer ?? '',
@@ -146,6 +155,8 @@ exports.listDeliveryOrders = async (req, res) => {
   }
 };
 
+
+
 exports.acceptDeliveryOrder = async (req, res) => {
   try {
     const { id } = req.params;
@@ -174,7 +185,7 @@ exports.acceptDeliveryOrder = async (req, res) => {
         .json({ success: false, message: 'لا يمكن قبول طلب غير مؤكد' });
     }
 
-    order.status = STATUS.RECEIVED;
+    order.status = STATUS.RECEIVED; // ✅ مستلمة
     order.delivery = {
       ...(order.delivery || {}),
       driverId,
@@ -185,7 +196,7 @@ exports.acceptDeliveryOrder = async (req, res) => {
     await order.save();
     return res.json({
       success: true,
-      message: 'تم استلام الطلب وتحديد سعر التوصيل',
+      message: 'تم استلام الطلب وتغيير حالته إلى مستلمة',
       order,
     });
   } catch (e) {
