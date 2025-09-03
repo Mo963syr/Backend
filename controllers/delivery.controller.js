@@ -139,6 +139,7 @@ exports.listDeliveryOrders = async (req, res) => {
         _id: o._id,
         orderId: o.orderId,
         status: o.status,
+       location: o.location?.coordinates ?? [],
         part ,part1,
         customer,
         seller,
