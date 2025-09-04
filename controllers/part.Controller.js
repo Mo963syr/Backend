@@ -314,15 +314,17 @@ exports.getCompatibleParts = async (req, res) => {
       });
     }
 
-    const compatibleParts = await part
-      .find({
-        $or: user.cars.map((car) => ({
-          manufacturer: car.manufacturer,
-          model: car.model,
-        })),
-      })
-      .select('name manufacturer model year category status price imageUrl')
-      .sort({ price: 1 });
+  const compatibleParts = await part
+  .find({
+    count: { $gt: 0 }, // 
+    $or: user.cars.map((car) => ({
+      manufacturer: car.manufacturer,
+      model: car.model,
+    })),
+  })
+  .select('name manufacturer model year category status price imageUrl count')
+  .sort({ price: 1 });
+
 
     res.status(200).json({
       success: true,
@@ -449,7 +451,7 @@ exports.viewPrivateParts = async (req, res) => {
 exports.viewAllParts = async (req, res) => {
   try {
     let parts;
-    parts = await part.find();
+  parts = await part.find({ count: { $gt: 0 } });
 
     res.status(200).json({
       message: '✅ تم جلب القطع بنجاح',
