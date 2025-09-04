@@ -562,18 +562,17 @@ exports.addspicificorder = async (req, res) => {
       const result = await cloudinary.uploader.upload(req.file.path);
       imageUrl = result.secure_url;
     }
-
-    const newOrder = new SpicificOrder({
-      name,
-      manufacturer,
-      model,
-      year,
-      serialNumber,
-      notes,
-      count,
-      user,
-      imageUrls: imageUrl ? [imageUrl] : [],
-    });
+const newOrder = new SpicificOrder({
+  name,
+  manufacturer: manufacturer.toLowerCase(),
+  model: model.toLowerCase(),
+  year,
+  serialNumber,
+  notes,
+  count,
+  user,
+  imageUrls: imageUrl ? [imageUrl] : [],
+});
 
     await newOrder.save();
 

@@ -4,12 +4,12 @@ const recommendationOfferSchema = new mongoose.Schema(
   {
     seller: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'User', // معرف المورد
+      ref: 'User',
       required: true,
     },
     order: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'spicificorderschema', // معرف الطلب
+      ref: 'spicificorderschema', 
       required: true,
     },
     price: {
