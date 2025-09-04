@@ -471,7 +471,7 @@ exports.viewspicificordercompleted = async (req, res) => {
   try {
     const sellerId = req.params.userId;
 
-    const orders = await Order.find({ userId: sellerId })
+    const orders = await Order.find({ userId: sellerId, status: 'تم التوصيل' })
       .populate({
         path: 'cartIds',
         populate: {
@@ -481,7 +481,10 @@ exports.viewspicificordercompleted = async (req, res) => {
       })
       .populate('userId', 'name email');
 
-    const ordersWithSummary = await Order.find({ userId: sellerId })
+    const ordersWithSummary = await Order.find({
+      userId: sellerId,
+      status: 'تم التوصيل',
+    })
       .populate({
         path: 'summaryIds',
         populate: [
