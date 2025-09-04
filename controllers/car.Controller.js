@@ -37,14 +37,14 @@ exports.addCarToUser = async (req, res) => {
       return res.status(404).json({ message: 'المستخدم غير موجود' });
     }
 
-    const car = await Car.create({
-      manufacturer,
-      model,
-      year,
-      fuelType,
-      user: userId,
-    });
-    
+const car = await Car.create({
+  manufacturer: manufacturer ? manufacturer.toLowerCase() : null,
+  model: model ? model.toLowerCase() : null,
+  year: year ? parseInt(year) : null,
+  fuelType: fuelType ? fuelType.toLowerCase() : null,
+  user: userId,
+});
+
     user.cars.push(car._id);
     await user.save();
 

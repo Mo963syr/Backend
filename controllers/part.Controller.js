@@ -506,21 +506,21 @@ exports.addPart = async (req, res) => {
       const result = await cloudinary.uploader.upload(req.file.path);
       imageUrl = result.secure_url;
     }
+const newPart = new part({
+  name,
+  manufacturer: manufacturer ? manufacturer.toLowerCase() : null,
+  serialNumber,
+  model: model ? model.toLowerCase() : null,
+  year,
+  count,
+  category,
+  status,
+  user: userId,
+  imageUrl,
+  price,
+  description,
+});
 
-    const newPart = new part({
-      name,
-      manufacturer,
-      serialNumber,
-      model,
-      year,
-      count,
-      category,
-      status,
-      user: userId, 
-      imageUrl,
-      price,
-      description,
-    });
 
     await newPart.save();
 
@@ -547,7 +547,6 @@ exports.addspicificorder = async (req, res) => {
       });
     }
 
-    // تحقق من أن المستخدم موجود
     const userExists = await User.findById(user);
     if (!userExists) {
       return res.status(404).json({
