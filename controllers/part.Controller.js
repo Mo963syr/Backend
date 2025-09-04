@@ -22,7 +22,9 @@ exports.addPartsFromExcel = async (req, res) => {
         .json({ message: '⚠️ يجب إرسال معرف المستخدم مع الطلب' });
     }
 
-    // قراءة ملف الإكسل
+    const fixedImageUrl = "https://res.cloudinary.com/dzjrgcxwt/image/upload/photo_2025-09-02_07-58-51_e8g6im.jpg";
+
+ 
     const workbook = XLSX.readFile(req.file.path);
     const sheet = workbook.Sheets[workbook.SheetNames[0]];
     const rows = XLSX.utils.sheet_to_json(sheet);
@@ -32,24 +34,23 @@ exports.addPartsFromExcel = async (req, res) => {
     for (const row of rows) {
       const newPart = new part({
         name: row.name,
-        manufacturer: row.manufacturer ? row.manufacturer.toLowerCase() : null, // ✅ صانع السيارة lowercase
+        manufacturer: row.manufacturer ? row.manufacturer.toLowerCase() : null,
         model: row.model ? row.model.toLowerCase() : null,
         year: row.year,
         category: row.category,
         status: row.status,
-        user: user, // ✅ من جسم الطلب
+        user: user,
         price: row.price,
         count: row.count,
         serialNumber: row.serialNumber,
         description: row.description,
-        imageUrl: null, // ما في صور
+        imageUrl: fixedImageUrl, 
       });
 
       await newPart.save();
       insertedParts.push(newPart);
     }
 
-    // حذف الملف المؤقت
     fs.unlinkSync(req.file.path);
 
     res.status(201).json({
@@ -61,6 +62,7 @@ exports.addPartsFromExcel = async (req, res) => {
     res.status(500).json({ message: '❌ فشل في إضافة القطع' });
   }
 };
+
 
 exports.getPartRatings = async (req, res) => {
   try {
@@ -500,7 +502,7 @@ exports.addPart = async (req, res) => {
 
     let imageUrl = null;
     if (req.file) {
-      console.log('📷 File received:', req.file.path);
+      console.log(' File received:', req.file.path);
       const result = await cloudinary.uploader.upload(req.file.path);
       imageUrl = result.secure_url;
     }
