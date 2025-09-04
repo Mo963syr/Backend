@@ -8,7 +8,7 @@ const XLSX = require('xlsx');
 const fs = require('fs');
 const path = require('path');
 const { count } = require('console');
-
+// const cloudinary = require('cloudinary').v2;
 exports.addPartsFromExcel = async (req, res) => {
   try {
     if (!req.file) {
@@ -473,6 +473,7 @@ exports.viewsellerParts = async (req, res) => {
   }
 };
 
+
 exports.addPart = async (req, res) => {
   try {
     const {
@@ -482,25 +483,26 @@ exports.addPart = async (req, res) => {
       year,
       category,
       status,
-      user,
       count,
       price,
       serialNumber,
       description,
+      user, 
     } = req.body;
-    //     const users=await User.findById(user);
 
-    //     if(!users){
-    //  return res.status(404).json({
-    //     success: false,
-    //     message: '🚫 المستخدم غير موجود في قاعدة البيانات',
-    //   });
-    //     }
-    let imageUrl = req.file ? req.file.path : null; // Changed from const to let
+    const userId = req.user?._id || user;
+    if (!userId) {
+      return res.status(400).json({
+        success: false,
+        message: '🚫 يجب تحديد معرف المستخدم',
+      });
+    }
 
+    let imageUrl = null;
     if (req.file) {
+      console.log('📷 File received:', req.file.path);
       const result = await cloudinary.uploader.upload(req.file.path);
-      imageUrl = result.secure_url; // Now this works because imageUrl is let
+      imageUrl = result.secure_url;
     }
 
     const newPart = new part({
@@ -512,7 +514,7 @@ exports.addPart = async (req, res) => {
       count,
       category,
       status,
-      user,
+      user: userId, 
       imageUrl,
       price,
       description,
@@ -521,14 +523,16 @@ exports.addPart = async (req, res) => {
     await newPart.save();
 
     res.status(201).json({
+      success: true,
       message: '✅ تم إضافة المنتج',
       part: newPart,
     });
   } catch (error) {
-    console.error(error);
+    console.error('❌ خطأ أثناء إضافة المنتج:', error);
     res.status(500).json({ error: '❌ فشل في إضافة المنتج' });
   }
 };
+
 exports.addspicificorder = async (req, res) => {
   try {
     const { name, manufacturer, model, year, serialNumber, notes, user ,count} =
