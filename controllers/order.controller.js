@@ -212,7 +212,7 @@ exports.vieworderitem = async (req, res) => {
         populate: [
           {
             path: 'order',
-            select: 'name manufacturer model year status imageUrl user',
+            select: 'name manufacturer model year status imageUrls user',
           },
           {
             path: 'offer',
@@ -243,7 +243,7 @@ exports.vieworderitem = async (req, res) => {
             model: summary.order.model,
             year: summary.order.year,
             status: summary.order.status,
-            imageUrl: summary.offer.imageUrl || summary.order.imageUrl,
+            imageUrl: summary.offer.imageUrls || summary.order.imageUrls,
             user: summary.order.user,
             price: summary.offer.price,
           },
@@ -260,7 +260,7 @@ exports.vieworderitem = async (req, res) => {
         const price = item.price || item.partId.price || 0;
         return sum + (item.quantity || 1) * price;
       }, 0);
-
+ const fee = order.delivery?.fee || 0;
       return {
         orderId: order._id,
         status: order.status,
@@ -268,6 +268,8 @@ exports.vieworderitem = async (req, res) => {
         location: order.location,
         cartIds: allItems,
         totalAmount,
+         fee,
+        grandTotal: totalAmount + fee,
       };
     });
 
