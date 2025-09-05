@@ -9,11 +9,82 @@ const fs = require('fs');
 const path = require('path');
 const { count } = require('console');
 
+const express = require("express");
+const axios = require("axios");
+
+exports.getRecommendations = async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(400).json({
+        success: false,
+        message: "⚠️ معرف المستخدم غير صالح",
+      });
+    }
+
+   
+    const response = await axios.post(
+      "https://reccomendation-system-06l7.onrender.com/recommend",
+      { user_id: userId ,top_n:10},
+      
+      { headers: { "Content-Type": "application/json" } }
+    );
+
+    const recommendations = response.data.recommendations || [];
+
+    if (!Array.isArray(recommendations) || recommendations.length === 0) {
+      return res.status(200).json({
+        success: true,
+        message: "لا توجد توصيات حالياً",
+        recommendations: [],
+      });
+    }
+
+   
+    const parts = await part.find({
+      _id: { $in: recommendations },
+    }).select("name manufacturer model year price imageUrl");
+
+    return res.status(200).json({
+      success: true,
+      userId,
+      recommendations: parts,
+    });
+  } catch (err) {
+    console.error("❌ خطأ أثناء جلب التوصيات:", err.message);
+    return res.status(500).json({
+      success: false,
+      message: "❌ فشل في جلب التوصيات",
+      error: err.message,
+    });
+  }
+};
+
+exports.getPartsbyId = async (req, res) => {
+  try {
+    const { partId } = req.body;
+    const parts = await part
+      .find({_id: partId })
+      .select('_id name manufacturer year')
+      .lean();
+
+    res.status(200).json({
+      success: true,
+
+      parts: parts,
+    });
+  } catch (err) {
+    console.error('❌ خطأ عند جلب القطع:', err);
+    res.status(500).json({
+      success: false,
+      message: 'فشل في جلب القطع',
+    });
+  }
+};
 exports.getAllParts = async (req, res) => {
   try {
-    const parts = await part.find()
-      .select('_id name manufacturer year') 
-      .lean();
+    const parts = await part.find().select('_id name manufacturer year').lean();
 
     const formattedParts = parts.map((p) => ({
       item_id: p._id,
@@ -49,9 +120,9 @@ exports.addPartsFromExcel = async (req, res) => {
         .json({ message: '⚠️ يجب إرسال معرف المستخدم مع الطلب' });
     }
 
-    const fixedImageUrl = "https://res.cloudinary.com/dzjrgcxwt/image/upload/photo_2025-09-02_07-58-51_e8g6im.jpg";
+    const fixedImageUrl =
+      'https://res.cloudinary.com/dzjrgcxwt/image/upload/photo_2025-09-02_07-58-51_e8g6im.jpg';
 
- 
     const workbook = XLSX.readFile(req.file.path);
     const sheet = workbook.Sheets[workbook.SheetNames[0]];
     const rows = XLSX.utils.sheet_to_json(sheet);
@@ -71,7 +142,7 @@ exports.addPartsFromExcel = async (req, res) => {
         count: row.count,
         serialNumber: row.serialNumber,
         description: row.description,
-        imageUrl: fixedImageUrl, 
+        imageUrl: fixedImageUrl,
       });
 
       await newPart.save();
@@ -89,7 +160,6 @@ exports.addPartsFromExcel = async (req, res) => {
     res.status(500).json({ message: '❌ فشل في إضافة القطع' });
   }
 };
-
 
 exports.getPartRatings = async (req, res) => {
   try {
@@ -341,17 +411,18 @@ exports.getCompatibleParts = async (req, res) => {
       });
     }
 
-  const compatibleParts = await part
-  .find({
-    count: { $gt: 0 }, // 
-    $or: user.cars.map((car) => ({
-      manufacturer: car.manufacturer,
-      model: car.model,
-    })),
-  })
-  .select('name manufacturer model year category status price imageUrl count')
-  .sort({ price: 1 });
-
+    const compatibleParts = await part
+      .find({
+        count: { $gt: 0 }, //
+        $or: user.cars.map((car) => ({
+          manufacturer: car.manufacturer,
+          model: car.model,
+        })),
+      })
+      .select(
+        'name manufacturer model year category status price imageUrl count'
+      )
+      .sort({ price: 1 });
 
     res.status(200).json({
       success: true,
@@ -478,7 +549,7 @@ exports.viewPrivateParts = async (req, res) => {
 exports.viewAllParts = async (req, res) => {
   try {
     let parts;
-  parts = await part.find({ count: { $gt: 0 } });
+    parts = await part.find({ count: { $gt: 0 } });
 
     res.status(200).json({
       message: '✅ تم جلب القطع بنجاح',
@@ -504,7 +575,6 @@ exports.viewsellerParts = async (req, res) => {
   }
 };
 
-
 exports.addPart = async (req, res) => {
   try {
     const {
@@ -518,7 +588,7 @@ exports.addPart = async (req, res) => {
       price,
       serialNumber,
       description,
-      user, 
+      user,
     } = req.body;
 
     const userId = req.user?._id || user;
@@ -535,21 +605,20 @@ exports.addPart = async (req, res) => {
       const result = await cloudinary.uploader.upload(req.file.path);
       imageUrl = result.secure_url;
     }
-const newPart = new part({
-  name,
-  manufacturer: manufacturer ? manufacturer.toLowerCase() : null,
-  serialNumber,
-  model: model ? model.toLowerCase() : null,
-  year,
-  count,
-  category,
-  status,
-  user: userId,
-  imageUrl,
-  price,
-  description,
-});
-
+    const newPart = new part({
+      name,
+      manufacturer: manufacturer ? manufacturer.toLowerCase() : null,
+      serialNumber,
+      model: model ? model.toLowerCase() : null,
+      year,
+      count,
+      category,
+      status,
+      user: userId,
+      imageUrl,
+      price,
+      description,
+    });
 
     await newPart.save();
 
@@ -566,8 +635,16 @@ const newPart = new part({
 
 exports.addspicificorder = async (req, res) => {
   try {
-    const { name, manufacturer, model, year, serialNumber, notes, user ,count} =
-      req.body;
+    const {
+      name,
+      manufacturer,
+      model,
+      year,
+      serialNumber,
+      notes,
+      user,
+      count,
+    } = req.body;
 
     if (!mongoose.Types.ObjectId.isValid(user)) {
       return res.status(400).json({
@@ -589,17 +666,17 @@ exports.addspicificorder = async (req, res) => {
       const result = await cloudinary.uploader.upload(req.file.path);
       imageUrl = result.secure_url;
     }
-const newOrder = new SpicificOrder({
-  name,
-  manufacturer: manufacturer.toLowerCase(),
-  model: model.toLowerCase(),
-  year,
-  serialNumber,
-  notes,
-  count,
-  user,
-  imageUrls: imageUrl ? [imageUrl] : [],
-});
+    const newOrder = new SpicificOrder({
+      name,
+      manufacturer: manufacturer.toLowerCase(),
+      model: model.toLowerCase(),
+      year,
+      serialNumber,
+      notes,
+      count,
+      user,
+      imageUrls: imageUrl ? [imageUrl] : [],
+    });
 
     await newOrder.save();
 

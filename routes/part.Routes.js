@@ -11,7 +11,7 @@ const {
   viewsellerParts,
   ratePart,
   getPartRatings,
-  addPartsFromExcel,getAllParts
+  addPartsFromExcel,getAllParts,getPartsbyId,getRecommendations
 } = require('../controllers/part.Controller');
 
 
@@ -30,7 +30,9 @@ router.post('/add', upload.single('image'), addPart);
 
 router.post('/ratePart/:partId', ratePart);
 router.get('/getPartRatings/:partId', getPartRatings);
+router.get('/getRecommendations/:userId', getRecommendations);
 router.get('/getAllParts', getAllParts);
+router.get('/getPartsbyId', getPartsbyId);
 
 router.get('/viewPrivateParts/:userid', getCompatibleParts);
 router.get('/CompatibleSpicificOrders/:userid/:role', CompatibleSpicificOrders);
