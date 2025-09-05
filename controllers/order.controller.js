@@ -212,7 +212,7 @@ exports.vieworderitem = async (req, res) => {
         populate: [
           {
             path: 'order',
-            select: 'name manufacturer model year status imageUrls user',
+            select: 'name manufacturer model year status imageUrls user notes',
           },
           {
             path: 'offer',
@@ -244,6 +244,7 @@ exports.vieworderitem = async (req, res) => {
             year: summary.order.year,
             status: summary.order.status,
             imageUrl: summary.offer.imageUrls || summary.order.imageUrls,
+            notes: summary.offer.notes || summary.order.notes,
             user: summary.order.user,
             price: summary.offer.price,
           },
