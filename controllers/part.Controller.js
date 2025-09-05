@@ -8,7 +8,34 @@ const XLSX = require('xlsx');
 const fs = require('fs');
 const path = require('path');
 const { count } = require('console');
-// const cloudinary = require('cloudinary').v2;
+
+exports.getAllParts = async (req, res) => {
+  try {
+    const parts = await part.find()
+      .select('_id name manufacturer year') 
+      .lean();
+
+    const formattedParts = parts.map((p) => ({
+      item_id: p._id,
+      part_name: p.name,
+      manufacturer: p.manufacturer,
+      year: p.year,
+    }));
+
+    res.status(200).json({
+      success: true,
+      count: formattedParts.length,
+      parts: formattedParts,
+    });
+  } catch (err) {
+    console.error('❌ خطأ عند جلب القطع:', err);
+    res.status(500).json({
+      success: false,
+      message: 'فشل في جلب القطع',
+    });
+  }
+};
+
 exports.addPartsFromExcel = async (req, res) => {
   try {
     if (!req.file) {

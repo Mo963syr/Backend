@@ -1,4 +1,28 @@
 const User = require('../models/user.Model');
+
+
+exports.getAllUsers = async (req, res) => {
+  try {
+    const users = await User.find({ role: 'user' }).select('_id');
+
+  
+    const user_id = users.map(u => u._id);
+
+    res.status(200).json({
+      success: true,
+      count: user_id.length,
+      user_id,
+    });
+  } catch (err) {
+    console.error('❌ خطأ عند جلب المستخدمين:', err);
+    res.status(500).json({
+      success: false,
+      message: 'فشل جلب المستخدمين',
+    });
+  }
+};
+
+
 exports.addUser = async (req, res) => {
   try {
     const { name, email, password, phoneNumber, prands, companyName, role } =
