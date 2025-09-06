@@ -12,7 +12,8 @@ const deliveryRoutes = require('./routes/delivery.routes');
 const Comment =require('./routes/comment.routes')
 const app = express();
 app.use(express.json());
-
+const pricingRoutes = require("./routes/pricingRoutes");
+app.use("/pricing", pricingRoutes);
 app.use('/cars', carRoutes);
 app.use('/user', userRoutes);
 app.use('/auth', userRoutes);
