@@ -1,12 +1,64 @@
 const User = require('../models/user.Model');
 
+exports.updateUserLocation = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { lng, lat } = req.body;
+
+    if (!userId || lng === undefined || lat === undefined) {
+      return res.status(400).json({
+        success: false,
+        message: '⚠️ يجب إرسال userId و lng و lat',
+      });
+    }
+
+    if (typeof lng !== 'number' || typeof lat !== 'number') {
+      return res.status(400).json({
+        success: false,
+        message: '⚠️ يجب أن تكون الإحداثيات أرقام',
+      });
+    }
+
+    const user = await User.findByIdAndUpdate(
+      userId,
+      {
+        $set: {
+          location: {
+            type: 'Point',
+            coordinates: [lng, lat],
+          },
+        },
+      },
+      { new: true }
+    );
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: '❌ المستخدم غير موجود',
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: '✅ تم تحديث الموقع بنجاح',
+      user,
+    });
+  } catch (err) {
+    console.error('❌ خطأ في تحديث الموقع:', err);
+    res.status(500).json({
+      success: false,
+      message: '❌ فشل في تحديث الموقع',
+      error: err.message,
+    });
+  }
+};
 
 exports.getAllUsers = async (req, res) => {
   try {
     const users = await User.find({ role: 'user' }).select('_id');
 
-  
-    const user_id = users.map(u => u._id);
+    const user_id = users.map((u) => u._id);
 
     res.status(200).json({
       success: true,
@@ -22,7 +74,6 @@ exports.getAllUsers = async (req, res) => {
   }
 };
 
-
 exports.addUser = async (req, res) => {
   try {
     const { name, email, password, phoneNumber, prands, companyName, role } =
@@ -35,7 +86,7 @@ exports.addUser = async (req, res) => {
       password,
       phoneNumber,
       prands,
-      role
+      role,
     });
 
     await user.save();

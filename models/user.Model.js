@@ -53,7 +53,23 @@ const userSchema = new mongoose.Schema({
     type: String,
     default: 'دمشق',
   },
-
+ location: {
+      type: {
+        type: String,
+        enum: ['Point'],
+        default: 'Point',
+      },
+      coordinates: {
+        type: [Number],
+        validate: {
+          validator: function (val) {
+            return Array.isArray(val) && val.length === 2;
+          },
+          message: 'يجب تحديد إحداثيات صحيحة [lng, lat]',
+        },
+        required: false,
+      },
+    },
   provinceNorm: {
     type: String,
     default: '',
