@@ -8,7 +8,7 @@ const {
   updateOrderStatus,
   viewspicificorderitem,
   getUserBrandOrders,
-  viewspicificordercompleted,getOrdersWithAverageRatings
+  viewspicificordercompleted,getOrdersWithAverageRatings,getOrderStatus,updateOrderStatuss
 } = require('../controllers/order.controller');
 
 const { addspicificorder } = require('../controllers/part.Controller');
@@ -26,6 +26,8 @@ router.put('/updateOrderStatus/:orderId', updateOrderStatus);
 router.get('/order-summary/:userId', getOrderSummariesByUser);
 router.get('/viewspicificordercompleted/:userId', viewspicificordercompleted);
 router.get('/getOrdersWithAverageRatings', getOrdersWithAverageRatings);
-// router.post('/recommendation-offer', /*authMiddleware,*/ createOffer);
+router.get("/:id/status", getOrderStatus);
+router.put("/:id/status", updateOrderStatuss);
+
 
 module.exports = router;

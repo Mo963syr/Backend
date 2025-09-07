@@ -5,7 +5,71 @@ const Order = require('../models/order.model');
 const User = require('../models/user.Model');
 const SpicificOrder = require('../models/spicificPartOrder.model');
 const OrderSummary = require('../models/orderSummary.model');
-// getOrdersWithAverageRatings
+
+
+exports.getOrderStatus = async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id);
+
+    if (!order) {
+      return res.status(404).json({ error: "Order not found" });
+    }
+
+    res.json({
+      orderId: order._id,
+      status: order.status,          
+      paymentStatus: order.payment.status, 
+    });
+  } catch (err) {
+    console.error("Error fetching order status:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+};
+
+exports.updateOrderStatuss = async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id);
+
+    if (!order) {
+      return res.status(404).json({ error: "Order not found" });
+    }
+
+    res.json({
+      orderId: order._id,
+      status: order.status,         
+      paymentStatus: order.payment.status,
+    });
+  } catch (err) {
+    console.error("Error fetching order status:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+};
+
+exports.updateOrderStatus = async (req, res) => {
+  try {
+    const { status } = req.body;
+    const order = await Order.findById(req.params.id);
+
+    if (!order) {
+      return res.status(404).json({ error: "Order not found" });
+    }
+
+    if (status) {
+      order.status = status;
+      await order.save();
+    }
+
+    res.json({
+      message: "Order status updated",
+      orderId: order._id,
+      status: order.status,
+    });
+  } catch (err) {
+    console.error("Error updating order status:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+};
+
 exports.getOrdersWithAverageRatings = async (req, res) => {
   try {
     const orders = await Order.find().populate({

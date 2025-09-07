@@ -1,4 +1,4 @@
-// models/order.js
+// models/Order.js
 const mongoose = require('mongoose');
 
 const orderSchema = new mongoose.Schema(
@@ -68,6 +68,15 @@ const orderSchema = new mongoose.Schema(
 
       province: { type: String, default: '' },
       provinceNorm: { type: String, default: '' },
+    },
+
+    payment: {
+      paymentId: { type: String }, 
+      status: {
+        type: String,
+        enum: ['pending', 'paid', 'failed', 'canceled'],
+        default: 'pending',
+      },
     },
   },
   { timestamps: true }

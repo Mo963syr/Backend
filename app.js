@@ -9,11 +9,12 @@ const modelsRoute = require('./routes/models');
 const favoritesRoutes = require('./routes/favorites.Routes');
 const req = require('./routes/recommendationOffer.Routes');
 const deliveryRoutes = require('./routes/delivery.routes');
-const Comment =require('./routes/comment.routes')
+const Comment = require('./routes/comment.routes');
+const paymentRoutes = require('./routes/payment.Routes');
 const app = express();
 app.use(express.json());
-const pricingRoutes = require("./routes/pricingRoutes");
-app.use("/pricing", pricingRoutes);
+const pricingRoutes = require('./routes/pricingRoutes');
+app.use('/pricing', pricingRoutes);
 app.use('/cars', carRoutes);
 app.use('/user', userRoutes);
 app.use('/auth', userRoutes);
@@ -24,8 +25,8 @@ app.use('/order', orderRoutes);
 app.use('/api/models', modelsRoute);
 app.use('/favorites', favoritesRoutes);
 app.use('/order', req);
-app.use('/comment',Comment);
-
+app.use('/comment', Comment);
+app.use('/payment', paymentRoutes);
 const uri =
   'mongodb+srv://moafaqaqeed01:JqphSStXpXgsv8t@cluster0.vhz1h.mongodb.net/PartTec?retryWrites=true&w=majority';
 
