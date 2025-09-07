@@ -86,7 +86,7 @@ exports.getUserBrandOrders = async (req, res) => {
 };
 exports.addOrder = async (req, res) => {
   try {
-    const { userId, coordinates } = req.body;
+    const { userId, coordinates, fee } = req.body;
 
     if (!mongoose.Types.ObjectId.isValid(userId)) {
       return res.status(400).json({
@@ -94,7 +94,6 @@ exports.addOrder = async (req, res) => {
         message: '⚠️ معرف المستخدم غير صالح',
       });
     }
-
     const existingOrder = await Order.find({
       userId,
       status: { $ne: 'تم التوصيل' },
@@ -152,10 +151,12 @@ exports.addOrder = async (req, res) => {
       cartIds,
       summaryIds,
       location: { type: 'Point', coordinates },
-
+      
+    
       delivery: {
         province: orderProvince,
         provinceNorm: orderProvinceNorm,
+        fee:fee
       },
     });
 
