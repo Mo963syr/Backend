@@ -3,8 +3,8 @@ const axios = require('axios');
 const Order = require('../models/order.model');
 
 const FATORA_BASE = 'https://egate-t.fatora.me/api'; 
-const FATORA_USER = 'your_username'; 
-const FATORA_PASS = 'your_password'; 
+const FATORA_USER = 'parttec'; 
+const FATORA_PASS = 'parttec@123'; 
 const AUTH_HEADER =
   'Basic ' + Buffer.from(`${FATORA_USER}:${FATORA_PASS}`).toString('base64');
 
