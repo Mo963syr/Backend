@@ -15,6 +15,60 @@ async function getPaymentStatus(paymentId) {
   });
   return res.data;
 }
+exports.getPaymentStatusForApp = async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const order = await Order.findById(orderId);
+
+    if (!order) {
+      return res.status(404).json({ error: 'Order not found' });
+    }
+
+    if (!order.payment || !order.payment.paymentId) {
+      return res.status(400).json({ error: 'No payment found for this order' });
+    }
+
+  
+    const statusData = await getPaymentStatus(order.payment.paymentId);
+
+    if (statusData.ErrorCode === 0) {
+      const rawStatus = statusData.Data.status;
+
+    
+      let statusText = "غير معروف";
+      switch (rawStatus) {
+        case "A":
+          statusText = "مدفوع";
+          break;
+        case "F":
+          statusText = "فشل الدفع";
+          break;
+        case "C":
+          statusText = "تم الإلغاء";
+          break;
+        case "P":
+          statusText = "قيد المعالجة";
+          break;
+        default:
+          statusText = rawStatus;
+      }
+
+      return res.json({
+        paymentId: order.payment.paymentId,
+        paymentStatus: statusText, 
+        rawStatus,              
+      });
+    } else {
+      return res.status(400).json({
+        error: statusData.ErrorMessage,
+        code: statusData.ErrorCode,
+      });
+    }
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to fetch payment status' });
+  }
+};
 
 exports.initPayment = async (req, res) => {
   try {

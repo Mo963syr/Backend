@@ -3,6 +3,9 @@ const express = require('express');
 const router = express.Router();
 const paymentController = require('../controllers/paymentController');
 
+
+router.get('/status/:orderId', paymentController.getPaymentStatusForApp);
+
 router.post('/init', paymentController.initPayment);
 router.get('/callback/:orderId', paymentController.paymentCallback);
 router.post('/trigger/:orderId', paymentController.paymentTrigger);
