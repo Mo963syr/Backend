@@ -68,8 +68,8 @@ const userSchema = new mongoose.Schema({
         },
         message: 'يجب تحديد إحداثيات صحيحة [lng, lat]',
       },
-      required: false, // ✅ اختياري
-      default: undefined, // ✅ ما بيتخزن إذا ما انبعت
+      required: false, 
+      default: undefined, 
     },
   },
   provinceNorm: {

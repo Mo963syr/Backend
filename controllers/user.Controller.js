@@ -164,28 +164,28 @@ exports.getAllUsersforAdmin = async (req, res) => {
   }
 };
 
-// exports.deleteUser = async (req, res) => {
-//   try {
-//     const { id } = req.params;
-//     const user = await User.findByIdAndDelete(id);
+exports.deleteUser = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const user = await User.findByIdAndDelete(id);
 
-//     if (!user) {
-//       return res.status(404).json({
-//         success: false,
-//         message: '🚫 المستخدم غير موجود',
-//       });
-//     }
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: '🚫 المستخدم غير موجود',
+      });
+    }
 
-//     res.json({
-//       success: true,
-//       message: '✅ تم حذف المستخدم بنجاح',
-//       user,
-//     });
-//   } catch (err) {
-//     res.status(500).json({
-//       success: false,
-//       message: '❌ فشل في حذف المستخدم',
-//       error: err.message,
-//     });
-//   }
-// };
+    res.json({
+      success: true,
+      message: '✅ تم حذف المستخدم بنجاح',
+      user,
+    });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: '❌ فشل في حذف المستخدم',
+      error: err.message,
+    });
+  }
+};
