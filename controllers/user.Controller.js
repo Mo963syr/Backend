@@ -73,26 +73,26 @@ exports.getAllUsers = async (req, res) => {
     });
   }
 };
-
 exports.addUser = async (req, res) => {
   try {
     const { name, email, password, phoneNumber, prands, companyName, role } =
       req.body;
 
+  
+    const hashedPassword = await bcrypt.hash(password, 10); 
+
     const user = await User.create({
       name,
       email,
       companyName,
-      password,
+      password: hashedPassword, 
       phoneNumber,
       prands,
       role,
     });
 
-    await user.save();
-
     res.status(201).json({
-      message: 'account created sucsses',
+      message: '✅ Account created successfully',
       user,
     });
   } catch (err) {
