@@ -15,7 +15,6 @@ try {
   OrderSummary = require('../models/orderSummary.model');  // عدّل المسار لو مختلف
 } catch (_) { /* لو غير موجود، تجاهل */ }
 
-const admin = require('../utils/firebase-admin'); 
 
 
 function sellerTopic(supplierId) {
@@ -868,38 +867,6 @@ exports.updateOrderStatus = async (req, res) => {
     });
   }
 };
-
-
-
-
-
-const mongoose = require('mongoose');
-
-const orderSummarySchema = new mongoose.Schema(
-  {
-    order: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'spicificorderschema',
-      required: true,
-    },
-    offer: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'RecommendationOffer',
-    },
-     status: {
-          type: String,
-      enum: ['بانتظار تأكيدك', 'قيد البحث','قيد المعالجة', 'ملغي', 'على الطريق','تم التوصيل' ,'مؤكد'],
-      default: 'قيد المعالجة',
-    }, 
-  
-  },
-
-  { timestamps: true }
-);
-
-module.exports = mongoose.model('OrderSummary', orderSummarySchema);
-
-
 
 
 
