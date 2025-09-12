@@ -268,7 +268,6 @@ exports.addOrder = async (req, res) => {
   try {
     const { userId, coordinates, fee } = req.body;
 
-    // ✅ تحقق من userId
     if (!mongoose.Types.ObjectId.isValid(userId)) {
       return res.status(400).json({
         success: false,
@@ -276,7 +275,6 @@ exports.addOrder = async (req, res) => {
       });
     }
 
-    // ✅ تحقق من عدد الطلبات النشطة
     const existingOrder = await Order.find({
       userId,
       status: { $ne: 'تم التوصيل' },
@@ -288,19 +286,13 @@ exports.addOrder = async (req, res) => {
       });
     }
 
-    // ✅ تحقق من الإحداثيات
-    if (
-      !coordinates ||
-      !Array.isArray(coordinates) ||
-      coordinates.length !== 2
-    ) {
+    if (!coordinates || !Array.isArray(coordinates) || coordinates.length !== 2) {
       return res.status(400).json({
         success: false,
         message: '⚠️ الموقع الجغرافي غير صالح (يتطلب [lng, lat])',
       });
     }
 
-    // ✅ تحقق من رسوم التوصيل
     if (typeof fee !== 'number' || fee < 0) {
       return res.status(400).json({
         success: false,
@@ -308,10 +300,11 @@ exports.addOrder = async (req, res) => {
       });
     }
 
-    // ✅ جلب عناصر السلة
-    const userCartItems = await Cart.find({ userId, status: 'قيد المعالجة' }).populate('partId');
+    const userCartItems = await Cart.find({
+      userId,
+      status: 'قيد المعالجة',
+    }).populate('partId');
 
-    // ✅ جلب طلبات specific order
     const userspiciorder = await OrderSummary.find({
       status: 'قيد المعالجة',
     })
@@ -340,7 +333,6 @@ exports.addOrder = async (req, res) => {
       .trim()
       .toLowerCase();
 
-    // ✅ إنشاء الطلب الجديد
     const newOrder = new Order({
       userId,
       cartIds,
@@ -351,52 +343,35 @@ exports.addOrder = async (req, res) => {
         provinceNorm: orderProvinceNorm,
         fee: fee,
       },
-      status: 'مؤكد', // حالة ابتدائية
+      status: 'مؤكد',
     });
 
     await newOrder.save();
 
-    // ✅ تحديث حالة السلة
     await Cart.updateMany(
       { _id: { $in: cartIds } },
       { $set: { status: 'مؤكد' } }
     );
 
-    // ✅ تحديث حالة الملخصات
     await OrderSummary.updateMany(
       { _id: { $in: summaryIds } },
       { $set: { status: 'مؤكد' } }
     );
 
-    // ✅ تحديد الموردين من السلة
     const sellerIds = [
-      ...new Set(userCartItems.map((item) => item.partId.sellerId.toString())),
+      ...new Set(
+        userCartItems
+          .filter((item) => item.partId && item.partId.sellerId)
+          .map((item) => item.partId.sellerId.toString())
+      ),
     ];
 
-    // ✅ إرسال إشعار لكل مورد عبر topic خاص فيه
-    for (const sellerId of sellerIds) {
-      try {
-        await admin.messaging().sendToTopic(`seller_${sellerId}`, {
-          notification: {
-            title: '📦 طلب جديد',
-            body: 'تم طلب قطعة جديدة من متجرك 🚀',
-          },
-          data: {
-            type: 'new_order',
-            orderId: newOrder._id.toString(),
-          },
-        });
-      } catch (notifyErr) {
-        console.warn(`⚠️ فشل إرسال الإشعار للمورد ${sellerId}:`, notifyErr.message);
-      }
-    }
-
-    // ✅ الرد
     res.status(201).json({
       success: true,
       message: '✅ تم إنشاء الطلب وتحديث حالة السلة بنجاح',
       orderId: newOrder._id,
       order: newOrder,
+      sellersNotified: sellerIds.length,
     });
   } catch (error) {
     console.error('❌ خطأ في إنشاء الطلب:', error);
@@ -407,6 +382,7 @@ exports.addOrder = async (req, res) => {
     });
   }
 };
+
 
 
 exports.vieworderitem = async (req, res) => {
