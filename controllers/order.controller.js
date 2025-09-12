@@ -1,10 +1,127 @@
+
+
 // controllers/orderController.js
 const mongoose = require('mongoose');
 const Cart = require('../models/cart.model');
 const Order = require('../models/order.model');
 const User = require('../models/user.Model');
 const SpicificOrder = require('../models/spicificPartOrder.model');
-const OrderSummary = require('../models/orderSummary.model');
+// const OrderSummary = require('../models/orderSummary.model');
+              
+        
+const Part = require('../models/part.Model');            
+let OrderSummary = null;                                   
+try {
+  OrderSummary = require('../models/orderSummary.model');  // عدّل المسار لو مختلف
+} catch (_) { /* لو غير موجود، تجاهل */ }
+
+const admin = require('../utils/firebase-admin'); 
+
+
+function sellerTopic(supplierId) {
+  // اسم موضوع آمن وفق قيود FCM Topics
+  return `seller-${String(supplierId).replace(/[^a-zA-Z0-9_\-\.~%]/g, '_')}`;
+}
+
+async function getSuppliersFromOrderRefs({ cartIds = [], summaryIds = [] }) {
+  const supplierIds = new Set();
+
+  // من السلال: Cart -> partId -> Part.sellerId
+  if (cartIds?.length) {
+    const carts = await Cart.find({ _id: { $in: cartIds } })
+      .select('partId')
+      .lean();
+    const partIds = carts.map(c => c.partId).filter(Boolean);
+
+    if (partIds.length) {
+      const parts = await Part.find({ _id: { $in: partIds } })
+        .select('sellerId')
+        .lean();
+      for (const p of parts) {
+        if (p?.sellerId) supplierIds.add(String(p.sellerId));
+      }
+    }
+  }
+
+  // من الملخصات (العروض): OrderSummary -> sellerId/supplierId (إن وُجد الموديل)
+  if (summaryIds?.length && OrderSummary) {
+    const summaries = await OrderSummary.find({ _id: { $in: summaryIds } })
+      .select('sellerId supplierId')
+      .lean();
+    for (const s of summaries) {
+      const sid = s?.sellerId || s?.supplierId;
+      if (sid) supplierIds.add(String(sid));
+    }
+  }
+
+  return Array.from(supplierIds);
+}
+
+async function notifySupplierOrderRequested(supplierId, orderId) {
+  const message = {
+    topic: sellerTopic(supplierId),
+    notification: {
+      title: 'طلب جديد',
+      body: 'لقد تم طلب فاتورة',
+    },
+    data: {
+      type: 'order-request',
+      orderId: String(orderId),
+      supplierId: String(supplierId),
+    },
+    android: {
+      notification: {
+        channelId: 'high_importance_channel',
+        priority: 'high',
+      },
+    },
+  };
+  return admin.messaging().send(message); 
+}
+
+
+exports.createOrder = async (req, res) => {
+  try {
+    const { userId, cartIds = [], summaryIds = [], location } = req.body;
+
+    if (!userId) {
+      return res.status(400).json({ ok: false, error: 'missing_userId' });
+    }
+    if ((!cartIds || cartIds.length === 0) && (!summaryIds || summaryIds.length === 0)) {
+      return res.status(400).json({ ok: false, error: 'no_items' });
+    }
+
+   
+    const orderDoc = await Order.create({
+      userId,
+      cartIds,
+      summaryIds,
+      location,            // { type:'Point', coordinates:[lng, lat] } إذا أرسلته من الفرونت
+      status: 'مؤكد',      // حسب سكيمتك الافتراضية
+    });
+
+    // استخراج المورّدين من cartIds/summaryIds
+    const supplierIds = await getSuppliersFromOrderRefs({ cartIds, summaryIds });
+
+    // إرسال الإشعارات لكل مورّد (Topic seller-<supplierId>)
+    const results = await Promise.allSettled(
+      supplierIds.map((sid) => notifySupplierOrderRequested(sid, orderDoc._id))
+    );
+
+    const sent = results.filter(r => r.status === 'fulfilled').length;
+    const failed = results.length - sent;
+
+    return res.status(201).json({
+      ok: true,
+      orderId: orderDoc._id,
+      suppliersCount: supplierIds.length,
+      notifications: { sent, failed },
+    });
+  } catch (err) {
+    console.error('createOrder error:', err);
+    return res.status(500).json({ ok: false, error: 'failed_to_create_order' });
+  }
+};
 
 
 exports.getOrderStatus = async (req, res) => {
@@ -152,12 +269,15 @@ exports.addOrder = async (req, res) => {
   try {
     const { userId, coordinates, fee } = req.body;
 
+    // ✅ تحقق من userId
     if (!mongoose.Types.ObjectId.isValid(userId)) {
       return res.status(400).json({
         success: false,
         message: '⚠️ معرف المستخدم غير صالح',
       });
     }
+
+    // ✅ تحقق من عدد الطلبات النشطة
     const existingOrder = await Order.find({
       userId,
       status: { $ne: 'تم التوصيل' },
@@ -169,6 +289,7 @@ exports.addOrder = async (req, res) => {
       });
     }
 
+    // ✅ تحقق من الإحداثيات
     if (
       !coordinates ||
       !Array.isArray(coordinates) ||
@@ -180,8 +301,18 @@ exports.addOrder = async (req, res) => {
       });
     }
 
-    const userCartItems = await Cart.find({ userId, status: 'قيد المعالجة' });
+    // ✅ تحقق من رسوم التوصيل
+    if (typeof fee !== 'number' || fee < 0) {
+      return res.status(400).json({
+        success: false,
+        message: '⚠️ قيمة رسوم التوصيل غير صالحة',
+      });
+    }
 
+    // ✅ جلب عناصر السلة
+    const userCartItems = await Cart.find({ userId, status: 'قيد المعالجة' }).populate('partId');
+
+    // ✅ جلب طلبات specific order
     const userspiciorder = await OrderSummary.find({
       status: 'قيد المعالجة',
     })
@@ -191,7 +322,7 @@ exports.addOrder = async (req, res) => {
       })
       .sort({ createdAt: -1 });
 
-    if (userCartItems.length === 0 && userspiciorder.length == 0) {
+    if (userCartItems.length === 0 && userspiciorder.length === 0) {
       return res.status(404).json({
         success: false,
         message: '🚫 لا توجد منتجات في السلة لهذا المستخدم',
@@ -210,37 +341,62 @@ exports.addOrder = async (req, res) => {
       .trim()
       .toLowerCase();
 
+    // ✅ إنشاء الطلب الجديد
     const newOrder = new Order({
       userId,
       cartIds,
       summaryIds,
       location: { type: 'Point', coordinates },
-      
-    
       delivery: {
         province: orderProvince,
         provinceNorm: orderProvinceNorm,
-        fee:fee
+        fee: fee,
       },
+      status: 'مؤكد', // حالة ابتدائية
     });
 
     await newOrder.save();
 
-    // تحديث حالة السلة
+    // ✅ تحديث حالة السلة
     await Cart.updateMany(
       { _id: { $in: cartIds } },
       { $set: { status: 'مؤكد' } }
     );
 
-    // تحديث حالة الملخصات (اختياري)
+    // ✅ تحديث حالة الملخصات
     await OrderSummary.updateMany(
       { _id: { $in: summaryIds } },
       { $set: { status: 'مؤكد' } }
     );
 
+    // ✅ تحديد الموردين من السلة
+    const sellerIds = [
+      ...new Set(userCartItems.map((item) => item.partId.sellerId.toString())),
+    ];
+
+    // ✅ إرسال إشعار لكل مورد عبر topic خاص فيه
+    for (const sellerId of sellerIds) {
+      try {
+        await admin.messaging().sendToTopic(`seller_${sellerId}`, {
+          notification: {
+            title: '📦 طلب جديد',
+            body: 'تم طلب قطعة جديدة من متجرك 🚀',
+          },
+          data: {
+            type: 'new_order',
+            orderId: newOrder._id.toString(),
+          },
+        });
+      } catch (notifyErr) {
+        console.warn(`⚠️ فشل إرسال الإشعار للمورد ${sellerId}:`, notifyErr.message);
+      }
+    }
+
+    // ✅ الرد
     res.status(201).json({
       success: true,
       message: '✅ تم إنشاء الطلب وتحديث حالة السلة بنجاح',
+      orderId: newOrder._id,
       order: newOrder,
     });
   } catch (error) {
@@ -252,6 +408,7 @@ exports.addOrder = async (req, res) => {
     });
   }
 };
+
 
 exports.vieworderitem = async (req, res) => {
   try {
@@ -711,3 +868,38 @@ exports.updateOrderStatus = async (req, res) => {
     });
   }
 };
+
+
+
+
+
+const mongoose = require('mongoose');
+
+const orderSummarySchema = new mongoose.Schema(
+  {
+    order: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'spicificorderschema',
+      required: true,
+    },
+    offer: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'RecommendationOffer',
+    },
+     status: {
+          type: String,
+      enum: ['بانتظار تأكيدك', 'قيد البحث','قيد المعالجة', 'ملغي', 'على الطريق','تم التوصيل' ,'مؤكد'],
+      default: 'قيد المعالجة',
+    }, 
+  
+  },
+
+  { timestamps: true }
+);
+
+module.exports = mongoose.model('OrderSummary', orderSummarySchema);
+
+
+
+
+
