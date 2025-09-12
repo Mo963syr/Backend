@@ -1,5 +1,3 @@
-
-
 // controllers/orderController.js
 const mongoose = require('mongoose');
 const Cart = require('../models/cart.model');
@@ -7,30 +5,25 @@ const Order = require('../models/order.model');
 const User = require('../models/user.Model');
 const SpicificOrder = require('../models/spicificPartOrder.model');
 // const OrderSummary = require('../models/orderSummary.model');
-              
-        
-const Part = require('../models/part.Model');            
-let OrderSummary = null;                                   
+
+const Part = require('../models/part.Model');
+let OrderSummary = null;
 try {
-  OrderSummary = require('../models/orderSummary.model');  // عدّل المسار لو مختلف
-} catch (_) { /* لو غير موجود، تجاهل */ }
-
-
+  OrderSummary = require('../models/orderSummary.model');
+} catch (_) {}
 
 function sellerTopic(supplierId) {
-  // اسم موضوع آمن وفق قيود FCM Topics
   return `seller-${String(supplierId).replace(/[^a-zA-Z0-9_\-\.~%]/g, '_')}`;
 }
 
 async function getSuppliersFromOrderRefs({ cartIds = [], summaryIds = [] }) {
   const supplierIds = new Set();
 
-  // من السلال: Cart -> partId -> Part.sellerId
   if (cartIds?.length) {
     const carts = await Cart.find({ _id: { $in: cartIds } })
       .select('partId')
       .lean();
-    const partIds = carts.map(c => c.partId).filter(Boolean);
+    const partIds = carts.map((c) => c.partId).filter(Boolean);
 
     if (partIds.length) {
       const parts = await Part.find({ _id: { $in: partIds } })
@@ -42,7 +35,6 @@ async function getSuppliersFromOrderRefs({ cartIds = [], summaryIds = [] }) {
     }
   }
 
-  // من الملخصات (العروض): OrderSummary -> sellerId/supplierId (إن وُجد الموديل)
   if (summaryIds?.length && OrderSummary) {
     const summaries = await OrderSummary.find({ _id: { $in: summaryIds } })
       .select('sellerId supplierId')
@@ -75,9 +67,8 @@ async function notifySupplierOrderRequested(supplierId, orderId) {
       },
     },
   };
-  return admin.messaging().send(message); 
+  return admin.messaging().send(message);
 }
-
 
 exports.createOrder = async (req, res) => {
   try {
@@ -86,28 +77,31 @@ exports.createOrder = async (req, res) => {
     if (!userId) {
       return res.status(400).json({ ok: false, error: 'missing_userId' });
     }
-    if ((!cartIds || cartIds.length === 0) && (!summaryIds || summaryIds.length === 0)) {
+    if (
+      (!cartIds || cartIds.length === 0) &&
+      (!summaryIds || summaryIds.length === 0)
+    ) {
       return res.status(400).json({ ok: false, error: 'no_items' });
     }
 
-   
     const orderDoc = await Order.create({
       userId,
       cartIds,
       summaryIds,
-      location,            // { type:'Point', coordinates:[lng, lat] } إذا أرسلته من الفرونت
-      status: 'مؤكد',      // حسب سكيمتك الافتراضية
+      location, // { type:'Point', coordinates:[lng, lat] } إذا أرسلته من الفرونت
+      status: 'مؤكد', // حسب سكيمتك الافتراضية
     });
 
-    // استخراج المورّدين من cartIds/summaryIds
-    const supplierIds = await getSuppliersFromOrderRefs({ cartIds, summaryIds });
+    const supplierIds = await getSuppliersFromOrderRefs({
+      cartIds,
+      summaryIds,
+    });
 
-    // إرسال الإشعارات لكل مورّد (Topic seller-<supplierId>)
     const results = await Promise.allSettled(
       supplierIds.map((sid) => notifySupplierOrderRequested(sid, orderDoc._id))
     );
 
-    const sent = results.filter(r => r.status === 'fulfilled').length;
+    const sent = results.filter((r) => r.status === 'fulfilled').length;
     const failed = results.length - sent;
 
     return res.status(201).json({
@@ -122,23 +116,22 @@ exports.createOrder = async (req, res) => {
   }
 };
 
-
 exports.getOrderStatus = async (req, res) => {
   try {
     const order = await Order.findById(req.params.id);
 
     if (!order) {
-      return res.status(404).json({ error: "Order not found" });
+      return res.status(404).json({ error: 'Order not found' });
     }
 
     res.json({
       orderId: order._id,
-      status: order.status,          
-      paymentStatus: order.payment.status, 
+      status: order.status,
+      paymentStatus: order.payment.status,
     });
   } catch (err) {
-    console.error("Error fetching order status:", err);
-    res.status(500).json({ error: "Server error" });
+    console.error('Error fetching order status:', err);
+    res.status(500).json({ error: 'Server error' });
   }
 };
 
@@ -147,17 +140,17 @@ exports.updateOrderStatuss = async (req, res) => {
     const order = await Order.findById(req.params.id);
 
     if (!order) {
-      return res.status(404).json({ error: "Order not found" });
+      return res.status(404).json({ error: 'Order not found' });
     }
 
     res.json({
       orderId: order._id,
-      status: order.status,         
+      status: order.status,
       paymentStatus: order.payment.status,
     });
   } catch (err) {
-    console.error("Error fetching order status:", err);
-    res.status(500).json({ error: "Server error" });
+    console.error('Error fetching order status:', err);
+    res.status(500).json({ error: 'Server error' });
   }
 };
 
@@ -167,7 +160,7 @@ exports.updateOrderStatus = async (req, res) => {
     const order = await Order.findById(req.params.id);
 
     if (!order) {
-      return res.status(404).json({ error: "Order not found" });
+      return res.status(404).json({ error: 'Order not found' });
     }
 
     if (status) {
@@ -176,13 +169,13 @@ exports.updateOrderStatus = async (req, res) => {
     }
 
     res.json({
-      message: "Order status updated",
+      message: 'Order status updated',
       orderId: order._id,
       status: order.status,
     });
   } catch (err) {
-    console.error("Error updating order status:", err);
-    res.status(500).json({ error: "Server error" });
+    console.error('Error updating order status:', err);
+    res.status(500).json({ error: 'Server error' });
   }
 };
 
@@ -265,6 +258,7 @@ exports.getUserBrandOrders = async (req, res) => {
   }
 };
 exports.addOrder = async (req, res) => {
+  const start = Date.now();
   try {
     const { userId, coordinates, fee } = req.body;
 
@@ -272,6 +266,7 @@ exports.addOrder = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: '⚠️ معرف المستخدم غير صالح',
+        executionTime: `${Date.now() - start} ms`,
       });
     }
 
@@ -283,13 +278,19 @@ exports.addOrder = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: '⚠️ لا يمكن إنشاء أكثر من 3 طلبات غير مكتملة',
+        executionTime: `${Date.now() - start} ms`,
       });
     }
 
-    if (!coordinates || !Array.isArray(coordinates) || coordinates.length !== 2) {
+    if (
+      !coordinates ||
+      !Array.isArray(coordinates) ||
+      coordinates.length !== 2
+    ) {
       return res.status(400).json({
         success: false,
         message: '⚠️ الموقع الجغرافي غير صالح (يتطلب [lng, lat])',
+        executionTime: `${Date.now() - start} ms`,
       });
     }
 
@@ -297,6 +298,7 @@ exports.addOrder = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: '⚠️ قيمة رسوم التوصيل غير صالحة',
+        executionTime: `${Date.now() - start} ms`,
       });
     }
 
@@ -318,6 +320,7 @@ exports.addOrder = async (req, res) => {
       return res.status(404).json({
         success: false,
         message: '🚫 لا توجد منتجات في السلة لهذا المستخدم',
+        executionTime: `${Date.now() - start} ms`,
       });
     }
 
@@ -348,15 +351,13 @@ exports.addOrder = async (req, res) => {
 
     await newOrder.save();
 
-    await Cart.updateMany(
-      { _id: { $in: cartIds } },
-      { $set: { status: 'مؤكد' } }
-    );
-
-    await OrderSummary.updateMany(
-      { _id: { $in: summaryIds } },
-      { $set: { status: 'مؤكد' } }
-    );
+    await Promise.all([
+      Cart.updateMany({ _id: { $in: cartIds } }, { $set: { status: 'مؤكد' } }),
+      OrderSummary.updateMany(
+        { _id: { $in: summaryIds } },
+        { $set: { status: 'مؤكد' } }
+      ),
+    ]);
 
     const sellerIds = [
       ...new Set(
@@ -366,24 +367,30 @@ exports.addOrder = async (req, res) => {
       ),
     ];
 
+    const end = Date.now();
+    const executionTime = `${end - start} ms`;
+    console.log(`⏱️ addOrder executed in ${executionTime}`);
+
     res.status(201).json({
       success: true,
       message: '✅ تم إنشاء الطلب وتحديث حالة السلة بنجاح',
       orderId: newOrder._id,
       order: newOrder,
       sellersNotified: sellerIds.length,
+      executionTime,
     });
   } catch (error) {
-    console.error('❌ خطأ في إنشاء الطلب:', error);
+    const end = Date.now();
+    const executionTime = `${end - start} ms`;
+    console.error(`❌ خطأ في إنشاء الطلب بعد ${executionTime}:`, error);
     res.status(500).json({
       success: false,
       message: '❌ فشل في إنشاء الطلب',
       error: error.message,
+      executionTime,
     });
   }
 };
-
-
 
 exports.vieworderitem = async (req, res) => {
   try {
@@ -458,7 +465,7 @@ exports.vieworderitem = async (req, res) => {
         const price = item.price || item.partId.price || 0;
         return sum + (item.quantity || 1) * price;
       }, 0);
- const fee = order.delivery?.fee || 0;
+      const fee = order.delivery?.fee || 0;
       return {
         orderId: order._id,
         status: order.status,
@@ -466,7 +473,7 @@ exports.vieworderitem = async (req, res) => {
         location: order.location,
         cartIds: allItems,
         totalAmount,
-         fee,
+        fee,
         grandTotal: totalAmount + fee,
       };
     });
@@ -843,6 +850,3 @@ exports.updateOrderStatus = async (req, res) => {
     });
   }
 };
-
-
-

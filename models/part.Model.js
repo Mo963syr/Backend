@@ -137,4 +137,5 @@ partSchema.virtual('averageRating').get(function () {
   return (total / this.ratings.length).toFixed(1);
 });
 
-module.exports = mongoose.model('Part', partSchema);
+module.exports = mongoose.models.Part || mongoose.model('Part', partSchema);
+

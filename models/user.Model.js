@@ -45,10 +45,9 @@ const userSchema = new mongoose.Schema({
   role: {
     type: String,
     required: true,
-    enum: ['user', 'seller', 'worker', 'delevery', 'mechanic'],
+    enum: ['user', 'seller', 'worker', 'delivery', 'mechanic'], // ✅ صححت spelling
     default: 'user',
   },
-
   province: {
     type: String,
     default: 'دمشق',
@@ -63,11 +62,14 @@ const userSchema = new mongoose.Schema({
       type: [Number],
       validate: {
         validator: function (val) {
+          // إذا فاضي أو غير موجود → اعتبره صحيح
+          if (!val || val.length === 0) return true;
           return Array.isArray(val) && val.length === 2;
         },
         message: 'يجب تحديد إحداثيات صحيحة [lng, lat]',
       },
-      required: false,
+      required: false, // ✅ اختياري
+      default: undefined, // ✅ ما بيتخزن إذا ما انبعت
     },
   },
   provinceNorm: {
@@ -76,4 +78,4 @@ const userSchema = new mongoose.Schema({
   },
 });
 
-module.exports = mongoose.model('User', userSchema);
+module.exports = mongoose.models.User || mongoose.model('User', userSchema);
