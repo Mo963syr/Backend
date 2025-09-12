@@ -145,3 +145,47 @@ exports.viewsellerprands = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+
+
+exports.getAllUsersforAdmin = async (req, res) => {
+  try {
+    const users = await User.find().select('name role phoneNumber email');
+    res.json({
+      success: true,
+      count: users.length,
+      users,
+    });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: '❌ فشل في جلب المستخدمين',
+      error: err.message,
+    });
+  }
+};
+
+exports.deleteUser = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const user = await User.findByIdAndDelete(id);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: '🚫 المستخدم غير موجود',
+      });
+    }
+
+    res.json({
+      success: true,
+      message: '✅ تم حذف المستخدم بنجاح',
+      user,
+    });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: '❌ فشل في حذف المستخدم',
+      error: err.message,
+    });
+  }
+};
