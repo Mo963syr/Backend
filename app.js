@@ -10,12 +10,19 @@ const favoritesRoutes = require('./routes/favorites.Routes');
 const req = require('./routes/recommendationOffer.Routes');
 const deliveryRoutes = require('./routes/delivery.routes');
 const Comment = require('./routes/comment.routes');
+const admin = require('./routes/adminRoutes');
+// CommonJS
+require('dotenv').config();
+
+
 const paymentRoutes = require('./routes/payment.Routes');
+
 const app = express();
 app.use(express.json());
 const pricingRoutes = require('./routes/pricingRoutes');
 app.use('/pricing', pricingRoutes);
 app.use('/cars', carRoutes);
+app.use('/admin', admin);
 app.use('/user', userRoutes);
 app.use('/auth', userRoutes);
 app.use('/part', partRoutes);
